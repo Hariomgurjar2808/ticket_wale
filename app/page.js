@@ -4,6 +4,7 @@ import LocationOnIcon from "@mui/icons-material/LocationOn";
 import LoginIcon from "@mui/icons-material/Login";
 import HowToRegIcon from "@mui/icons-material/HowToReg";
 import MenuIcon from "@mui/icons-material/Menu";
+import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 // MONGODB INTEGRATION: Import LogoutIcon and PersonIcon for user menu
 import LogoutIcon from "@mui/icons-material/Logout";
 import PersonIcon from "@mui/icons-material/Person";
@@ -25,7 +26,6 @@ import {
   FaInstagram,
   FaGoogle,
   FaTwitter,
-  FaMapMarkerAlt,
 } from "react-icons/fa";
 
 import Link from "next/link";
@@ -49,6 +49,9 @@ export default function Page() {
   const [anchorEl, setAnchorEl] = useState(null);
   // MONGODB INTEGRATION: Added user menu state for authenticated users
   const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
+  const [fromCity, setFromCity] = useState(null);
+  const [toCity, setToCity] = useState(null);
+  const [travelDate, setTravelDate] = useState("");
   const router = useRouter();
 
   // MONGODB INTEGRATION: Get authentication state and functions
@@ -96,15 +99,23 @@ export default function Page() {
     handleUserMenuClose();
   };
 
+  const isBookingFormComplete = Boolean(
+    fromCity?.label && toCity?.label && travelDate
+  );
+
   // MONGODB INTEGRATION: Handle Book Ride button click
   const handleBookRide = () => {
-    if (isAuthenticated()) {
-      // User is logged in, proceed with booking
-      router.push('/booking');
-    } else {
-      // User is not logged in, redirect to login page
-      router.push('/login');
+    if (!isBookingFormComplete) {
+      return;
     }
+
+    const bookingQuery = new URLSearchParams({
+      from: fromCity.label,
+      to: toCity.label,
+      date: travelDate,
+    }).toString();
+
+    router.push(`/booking?${bookingQuery}`);
   };
 
   // MONGODB INTEGRATION: Dynamic auth buttons based on authentication state
@@ -128,15 +139,15 @@ export default function Page() {
   ];
 
   const cities = [
-    { label: "New York, USA" },
-    { label: "London, UK" },
-    { label: "Tokyo, Japan" },
-    { label: "Delhi, India" },
-    { label: "Paris, France" },
-    { label: "Sydney, Australia" },
-    { label: "Dubai, UAE" },
-    { label: "Berlin, Germany" },
-    { label: "Toronto, Canada" },
+    { label: "Indore" },
+    { label: "Raipur" },
+    { label: "Pune" },
+    { label: "Delhi" },
+    { label: "Patna" },
+    { label: "Mumbai" },
+    { label: "Chennai" },
+    { label: "Kolkata" },
+    { label: "Lucknow" },
   ];
 
   return (
@@ -322,65 +333,150 @@ export default function Page() {
           Your trusted travel partner for flights, hotels, buses, and more!
         </Typography>
 
-        <Box className="w-full max-w-md sm:max-w-lg lg:max-w-xl flex flex-col gap-4 sm:gap-6 px-4">
-          <Autocomplete
-            options={cities}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="From"
-                variant="outlined"
-                fullWidth
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <FaMapMarkerAlt style={{ color: "black" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            )}
-          />
-          <Autocomplete
-            options={cities}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="To"
-                variant="outlined"
-                fullWidth
-                InputProps={{
-                  ...params.InputProps,
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <FaMapMarkerAlt style={{ color: "black" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            )}
-          />
-
-
-          <Button
-            variant="contained"
-            onClick={handleBookRide}
-            className="w-full sm:w-auto px-6 sm:px-8 py-3 sm:py-4 text-lg sm:text-xl font-medium"
+        <Box
+          className="w-full max-w-md sm:max-w-lg lg:max-w-2xl px-4"
+          sx={{
+            borderRadius: "24px",
+            p: { xs: 2.5, sm: 3, md: 4 },
+            background:
+              "linear-gradient(145deg, rgba(255,255,255,0.98) 0%, rgba(246,245,255,0.98) 100%)",
+            border: "1px solid #e7e8fb",
+            boxShadow: "0 20px 44px rgba(61, 70, 125, 0.12)",
+          }}
+        >
+          <Typography
+            variant="h6"
             sx={{
-              backgroundColor: "#5b5ea6",
-              textTransform: "none",
-              borderRadius: "10px",
-              minHeight: "50px",
-              fontWeight: "bold",
-              fontSize: { xs: '16px', sm: '18px', md: '20px' },
-              "&:hover": {
-                backgroundColor: "#4a4d8f",
-              },
+              color: "#292c6d",
+              fontWeight: 800,
+              mb: 2.5,
+              textAlign: "center",
             }}
           >
-            Book Ride
-          </Button>
+            Plan Your Next Ride
+          </Typography>
+
+          <Box className="flex flex-col gap-4 sm:gap-5">
+            <Autocomplete
+              options={cities}
+              value={fromCity}
+              onChange={(_, newValue) => setFromCity(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="From"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationOnIcon sx={{ color: "#5b5ea6" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "14px",
+                      backgroundColor: "#ffffff",
+                    },
+                  }}
+                />
+              )}
+            />
+
+            <Autocomplete
+              options={cities}
+              value={toCity}
+              onChange={(_, newValue) => setToCity(newValue)}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="To"
+                  variant="outlined"
+                  fullWidth
+                  required
+                  InputProps={{
+                    ...params.InputProps,
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <LocationOnIcon sx={{ color: "#5b5ea6" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    "& .MuiOutlinedInput-root": {
+                      borderRadius: "14px",
+                      backgroundColor: "#ffffff",
+                    },
+                  }}
+                />
+              )}
+            />
+
+            <TextField
+              label="Travel Date"
+              type="date"
+              value={travelDate}
+              onChange={(event) => setTravelDate(event.target.value)}
+              fullWidth
+              required
+              InputLabelProps={{
+                shrink: true,
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <CalendarMonthIcon sx={{ color: "#5b5ea6" }} />
+                  </InputAdornment>
+                ),
+              }}
+              inputProps={{
+                min: new Date().toISOString().split("T")[0],
+              }}
+              sx={{
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: "14px",
+                  backgroundColor: "#ffffff",
+                },
+              }}
+            />
+
+            <Button
+              variant="contained"
+              onClick={handleBookRide}
+              disabled={!isBookingFormComplete}
+              className="w-full px-6 py-3 sm:py-4 text-lg sm:text-xl font-medium"
+              sx={{
+                background: "linear-gradient(135deg, #5b5ea6 0%, #292c6d 100%)",
+                textTransform: "none",
+                borderRadius: "14px",
+                minHeight: "54px",
+                fontWeight: "bold",
+                fontSize: { xs: '17px', sm: '19px', md: '20px' },
+                boxShadow: "0 14px 28px rgba(91,94,166,0.28)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #4a4d8f 0%, #20235a 100%)",
+                },
+                "&.Mui-disabled": {
+                  backgroundColor: "#b9bacc",
+                  color: "white",
+                },
+              }}
+            >
+              Book Ride
+            </Button>
+
+            {!isBookingFormComplete && (
+              <Typography
+                variant="body2"
+                sx={{ color: "#63647f", textAlign: "center", fontWeight: 500 }}
+              >
+                Select your pickup city, destination, and travel date to continue.
+              </Typography>
+            )}
+          </Box>
         </Box>
       </Box>
 
@@ -407,7 +503,7 @@ export default function Page() {
                 <Avatar
                   alt={option.title}
                   src={option.image}
-                  className="w-16 h-16 sm:w-20 sm:h-20 mb-2 sm:mb-3"
+                  className="w-16 h-16 sm:w-20 sm:h-20 mb-2 sm:mb-3 "
                   variant="rounded"
                 />
                 <Typography
@@ -422,6 +518,130 @@ export default function Page() {
         </Box>
       </Box>
 
+      {/* Promotional Section */}
+      <div className="flex flex-col lg:flex-row items-center justify-around bg-gray-50 p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16 rounded-xl sm:rounded-2xl shadow-sm mx-4 sm:mx-6 lg:mx-8 my-6 sm:my-8 lg:my-12">
+        {/* Left Section */}
+        <div className="max-w-sm sm:max-w-md lg:max-w-lg text-center lg:text-left mb-6 lg:mb-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-4">
+            Get Quick Rides,
+            <br />
+            Low Fares
+          </h1>
+          <div className="h-1 w-8 sm:w-10 lg:w-12 bg-yellow-400 my-3 sm:my-4 mx-auto lg:mx-0"></div>
+          <p className="text-gray-700 text-sm sm:text-base md:text-lg lg:text-lg xl:text-xl mb-4 sm:mb-6 leading-relaxed">
+            In Ticket Wale we ensure our customers get rides quickly at the most
+            affordable prices.
+          </p>
+          <button className="bg-gray-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base md:text-lg font-medium hover:bg-gray-800 transition-all duration-300 flex items-center justify-center mx-auto lg:mx-0 transform hover:scale-105">
+            Book a ride <span className="ml-2">→</span>
+          </button>
+        </div>
+
+        {/* Right Section - Images */}
+        <div className="flex justify-center lg:justify-end lg:ml-6 xl:ml-10">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+            <img
+              src="https://rapido-app-assets-staging.storage.googleapis.com/7bfb291ed6fd8fef3949b695f66f0441_1738146457741.webp"
+              alt="Rapido ride promo"
+              className="rounded-xl sm:rounded-2xl w-48 sm:w-56 md:w-64 lg:w-72 xl:w-100 h-auto object-cover shadow-lg transition-transform duration-300 hover:scale-105"
+            />
+          </div>
+        </div>
+      </div>
+
+
+ <div className="flex flex-col lg:flex-row items-center justify-around bg-gray-50 p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16 rounded-xl sm:rounded-2xl shadow-sm mx-4 sm:mx-6 lg:mx-8 my-6 sm:my-8 lg:my-12">
+       
+        {/* Right Section - Images */}
+        <div className="flex justify-center lg:justify-end lg:ml-6 xl:ml-10">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+            <img
+              src="https://rapido-app-assets-staging.storage.googleapis.com/c1ec7791629614c8c040a2a8c68bbc79_1738146545252.webp"
+              alt="Rapido ride promo"
+              className="rounded-xl sm:rounded-2xl w-48 sm:w-56 md:w-64 lg:w-72 xl:w-100 h-auto object-cover shadow-lg transition-transform duration-300 hover:scale-105"
+            />
+          </div>
+        </div>
+        {/* Left Section */}
+        <div className="max-w-sm sm:max-w-md lg:max-w-lg text-center lg:text-left mb-6 lg:mb-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-4">
+            Flexible Hours & 
+            <br />
+           High Earnings
+          </h1>
+          <div className="h-1 w-8 sm:w-10 lg:w-12 bg-yellow-400 my-3 sm:my-4 mx-auto lg:mx-0"></div>
+          <p className="text-gray-700 text-sm sm:text-base md:text-lg lg:text-lg xl:text-xl mb-4 sm:mb-6 leading-relaxed">
+           Join as a Ticket Wale captain and earn on your own terms. Driver whenever you want.
+          </p>
+          <button className="bg-gray-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base md:text-lg font-medium hover:bg-gray-800 transition-all duration-300 flex items-center justify-center mx-auto lg:mx-0 transform hover:scale-105">
+           Start Earning <span className="ml-2">→</span>
+          </button>
+        </div>
+      </div>
+
+<div className="flex flex-col lg:flex-row items-center justify-around bg-gray-50 p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16 rounded-xl sm:rounded-2xl shadow-sm mx-4 sm:mx-6 lg:mx-8 my-6 sm:my-8 lg:my-12">
+        {/* Left Section */}
+        <div className="max-w-sm sm:max-w-md lg:max-w-lg text-center lg:text-left mb-6 lg:mb-0">
+          <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-4">
+            Safety for all
+          </h1>
+          <div className="h-1 w-8 sm:w-10 lg:w-12 bg-yellow-400 my-3 sm:my-4 mx-auto lg:mx-0"></div>
+          <p className="text-gray-700 text-sm sm:text-base md:text-lg lg:text-lg xl:text-xl mb-4 sm:mb-6 leading-relaxed">
+            At Ticket Wale, your safety is our priority. We’re dedicated to making every ride safe and comfortable.
+          </p>
+          <button className="bg-gray-900 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-full text-sm sm:text-base md:text-lg font-medium hover:bg-gray-800 transition-all duration-300 flex items-center justify-center mx-auto lg:mx-0 transform hover:scale-105">
+           Know More <span className="ml-2">→</span>
+          </button>
+        </div>
+
+        {/* Right Section - Images */}
+        <div className="flex justify-center lg:justify-end lg:ml-6 xl:ml-10">
+          <div className="grid grid-cols-1 gap-3 sm:gap-4">
+            <img
+              src="https://rapido-app-assets-staging.storage.googleapis.com/fc70552b297693e48cef580e9f9c50c3_1738574004491.webp"
+              alt="Rapido ride promo"
+              className="rounded-xl sm:rounded-2xl w-48 sm:w-56 md:w-64 lg:w-72 xl:w-100 h-auto object-cover shadow-lg transition-transform duration-300 hover:scale-105"
+            />
+          </div>
+        </div>
+      </div>
+
+<section className="bg-black text-white py-16 px-6 text-center">
+<h2 className="text-4xl md:text-5xl font-extrabold mb-4">Download Now</h2>
+<div className="h-1 w-12 bg-yellow-400 mx-auto mb-10"></div>
+
+
+<div className="flex flex-col md:flex-row items-center justify-center gap-12">
+{/* TicketWale User App */}
+<div className="flex flex-col items-center">
+<div className="bg-yellow-400 rounded-xl p-6 flex items-center justify-center w-24 h-24 shadow-lg">
+<img
+src="/mnt/data/b459b40e-83c6-4212-8270-14e79eaf51c7.png"
+alt="TicketWale User App"
+className="w-16 h-16 object-contain"
+/>
+</div>
+<p className="mt-6 text-xl md:text-2xl font-medium leading-tight">
+TicketWale: Book & Travel
+</p>
+</div>
+
+
+{/* TicketWale Partner App */}
+<div className="flex flex-col items-center">
+<div className="bg-white rounded-xl p-6 flex items-center justify-center w-24 h-24 shadow-lg">
+<img
+src="/mnt/data/b459b40e-83c6-4212-8270-14e79eaf51c7.png"
+alt="TicketWale Partner App"
+className="w-16 h-16 object-contain"
+/>
+</div>
+<p className="mt-6 text-xl md:text-2xl font-medium leading-tight">
+TicketWale Partner: Drive & Earn
+</p>
+</div>
+</div>
+</section>
       {/* Footer */}
       <Box component="footer" className="mt-auto bg-black text-white py-6 sm:py-8 text-center px-4">
         <Typography variant="h6" className="text-lg sm:text-xl mb-3 sm:mb-4 py-2">Follow Us</Typography>

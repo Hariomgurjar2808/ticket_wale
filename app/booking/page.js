@@ -1,524 +1,699 @@
-"use client"; // must be the first line
+"use client";
 
-import React from "react";
-import { Box } from "@mui/material";
-import { Button, Typography } from "antd";
-import { Typewriter } from "react-simple-typewriter";
-import Link from "next/link";
-import ArrowRightAltIcon from "@mui/icons-material/ArrowRightAlt";
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-// import wirld from "../images/wirld.jpg";
+import React, { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Box, Button, Chip, Divider, MenuItem, TextField, Typography } from "@mui/material";
 
-const Navbar = () => {
-  const testimonialData = [
-    {
-      text: "“I was able to list within 15 minutes, and no more than two hours later, I had my first booking.”",
-      name: "Parley Rose",
-      title: "UK-based host",
-      img: "https://xx.bstatic.com/xdata/e/xphoto/max1024x100/Ukyc4Gwipc8i5A_1fBPHdxgI7Yu5yIKj7ShaZze2j_QHDEvQlQrUm_ZXUHgsDGecDmjBfbptfqP5pihKsEhz26lCZI7nnEP0kH1pmN7i.jpg",
-    },
-    {
-      text: "“Booking.com is the most straightforward OTA to work with. Everything is clear, it's easy. And it frees us up to focus on the aspects where we can really add value, like the guest experience.”",
-      name: "Martin Fieldman",
-      title: "Managing Director, Abodebed",
-      img: "https://xx.bstatic.com/xdata/e/xphoto/max600x120/Ukuc4Gwipc8i5CH5gAVsSjtWdunQi9-51tJLCwQPf2PGW_xGqh1WC9mkm4DI40UmWrOqC3iaI-WDrY8mGyL2ApuMLznWMrGdV4lNb18=.jpg",
-    },
-    {
-      text: "“Booking.com accounts for our largest share of guests and helped us get where we are today.”",
-      name: "Michel and Asja",
-      title: "Owners of La Maison de Souhey",
-      img: "https://xx.bstatic.com/xdata/e/xphoto/max600x120/UktFsp563N_OGPALUNtthVGWa-r1FwOhH-BJbJAJmx7L1SLmPJZGoQ8uBrkYVkhwyFMUf7CEvE_3BJ1pS80Ny3rpE1jC2f6P2ek_r4I=.jpg",
-    },
-    {
-      text: "Travel Booking.com is an all-in-one travel booking platform designed to simplify your travel planning experience...",
-      name: "Louis Gonzalez",
-      title: "Charming Lofts, Los Angeles",
-      img: "https://xx.bstatic.com/xdata/e/xphoto/max600x120/Ukuc4Gwipc8i5MpkasdbWZXwRW2b-NKOV1BoXXjrUFjSx_oyNFEkzze_bg6haOnPb0kCxtdGSoKDXFMNyBw0pUgNt-L4ge4hSRhYuKg=.jpg",
-    },
-    {
-      text: "📝 Leave a Review: Share your experience to help future travelers and improve services.",
-      name: "Zoey Berghoff",
-      title: "US-based host",
-      img: "https://xx.bstatic.com/xdata/e/xphoto/max600x120/Ukuc4Gwipc8i5Lz1EpeaLFAoRVrkjWkJuqInmhVXyBn1VIJmr0kwpen5i0mwkkTrdi1mmdTA5YgA1GojSo7bbef9Axi9afPN815cWl0=.jpg",
-    },
-    {
-      text: "“Getting started with Booking.com was super simple and took no time at all.”",
-      name: "Shawn Ritzenthaler",
-      title: "Owner of The Hollywood Hills Mansion",
-      img: "https://xx.bstatic.com/xdata/e/xphoto/max600x120/Ukuc4Gwipc8i5GMsGtAVVjxhdtTmFe3tRNWntQU0Skp4BuJQ1Cm_cQ7Qjq9zZPKYsb0DDiJCLVSkGoKQwqTXNJyePN0tX4xeNJNzd6E=.jpg",
-    },
-  ];
+const STORAGE_KEY = "ticket_wales_bus_inventory";
+
+const defaultBuses = [
+  {
+    id: "bus-1",
+    name: "Sahu Express",
+    operator: "TicketWale Travels",
+    startTime: "07:30 AM",
+    reachTime: "12:10 PM",
+    duration: "4h 40m",
+    rating: 4.6,
+    price: 550,
+    busType: "AC Sleeper",
+    amenities: ["Charging", "Wi-Fi", "Live Tracking"],
+    totalSeats: 40,
+    bookedSeats: [1, 5, 9, 12, 18, 23, 27, 31],
+  },
+  {
+    id: "bus-2",
+    name: "City Deluxe",
+    operator: "Cityline Mobility",
+    startTime: "10:15 AM",
+    reachTime: "03:20 PM",
+    duration: "5h 05m",
+    rating: 4.3,
+    price: 480,
+    busType: "Non AC Seater",
+    amenities: ["Water Bottle", "Blanket"],
+    totalSeats: 40,
+    bookedSeats: [2, 3, 7, 8, 13, 16, 29],
+  },
+  {
+    id: "bus-3",
+    name: "Star Travels",
+    operator: "NightStar Fleet",
+    startTime: "09:45 PM",
+    reachTime: "05:30 AM",
+    duration: "7h 45m",
+    rating: 4.8,
+    price: 620,
+    busType: "AC Sleeper",
+    amenities: ["Charging", "Blanket", "CCTV"],
+    totalSeats: 40,
+    bookedSeats: [4, 6, 10, 11, 14, 15, 17, 20, 24],
+  },
+  {
+    id: "bus-4",
+    name: "Volvo Travel",
+    operator: "Skyline Intercity",
+    startTime: "06:10 AM",
+    reachTime: "11:00 AM",
+    duration: "4h 50m",
+    rating: 4.5,
+    price: 590,
+    busType: "Volvo AC",
+    amenities: ["Wi-Fi", "Live Tracking", "Snacks"],
+    totalSeats: 40,
+    bookedSeats: [8, 19, 21, 25, 28, 34],
+  },
+  {
+    id: "bus-5",
+    name: "Chouhan Travels",
+    operator: "Rapid Transit Co.",
+    startTime: "01:30 PM",
+    reachTime: "06:40 PM",
+    duration: "5h 10m",
+    rating: 4.1,
+    price: 450,
+    busType: "AC Seater",
+    amenities: ["Charging", "Water Bottle"],
+    totalSeats: 42,
+    bookedSeats: [1, 2, 3, 5, 7, 13, 30],
+  },
+  {
+    id: "bus-6",
+    name: "Royal Elite",
+    operator: "Royal Group",
+    startTime: "04:20 PM",
+    reachTime: "10:05 PM",
+    duration: "5h 45m",
+    rating: 4.7,
+    price: 670,
+    busType: "Luxury Sleeper",
+    amenities: ["Wi-Fi", "Blanket", "Recliner"],
+    totalSeats: 36,
+    bookedSeats: [9, 11, 12, 16, 17, 22],
+  },
+  {
+    id: "bus-7",
+    name: "NeoGo Express",
+    operator: "GreenLine Mobility",
+    startTime: "08:05 PM",
+    reachTime: "01:40 AM",
+    duration: "5h 35m",
+    rating: 4.2,
+    price: 520,
+    busType: "AC Seater",
+    amenities: ["Charging", "Live Tracking"],
+    totalSeats: 40,
+    bookedSeats: [6, 10, 14, 15, 26, 29, 38],
+  },
+  {
+    id: "bus-8",
+    name: "Yadav Bus",
+    operator: "Metro Fleet",
+    startTime: "11:50 PM",
+    reachTime: "05:20 AM",
+    duration: "5h 30m",
+    rating: 4.4,
+    price: 560,
+    busType: "AC Sleeper",
+    amenities: ["Blanket", "CCTV", "Wi-Fi"],
+    totalSeats: 38,
+    bookedSeats: [2, 4, 18, 20, 24, 31],
+  },
+];
+
+const getAvailableSeats = (bus) => bus.totalSeats - bus.bookedSeats.length;
+
+const isSleeperType = (busType = "") => busType.toLowerCase().includes("sleeper");
+
+const defaultBusCatalog = defaultBuses.reduce((acc, bus) => {
+  acc[bus.id] = bus;
+  return acc;
+}, {});
+
+const amenityColorMap = {
+  "Wi-Fi": { bg: "#dbeafe", color: "#1d4ed8" },
+  Charging: { bg: "#dcfce7", color: "#166534" },
+  Blanket: { bg: "#ede9fe", color: "#6d28d9" },
+  Snacks: { bg: "#ffedd5", color: "#9a3412" },
+  CCTV: { bg: "#fee2e2", color: "#b91c1c" },
+  Recliner: { bg: "#fef3c7", color: "#92400e" },
+  "Live Tracking": { bg: "#ccfbf1", color: "#0f766e" },
+  "Water Bottle": { bg: "#e0f2fe", color: "#0369a1" },
+};
+
+const getAmenityChipSx = (amenity) => {
+  const color = amenityColorMap[amenity] || { bg: "#f3f4f6", color: "#374151" };
+  return {
+    backgroundColor: color.bg,
+    color: color.color,
+    fontWeight: 700,
+    border: "1px solid rgba(255,255,255,0.55)",
+  };
+};
+
+const pickPreferredString = (value, fallback, placeholders = []) => {
+  if (typeof value !== "string") {
+    return fallback || "";
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed || placeholders.includes(trimmed)) {
+    return fallback || trimmed || "";
+  }
+
+  return trimmed;
+};
+
+const pickPreferredAmenities = (value, fallback) => {
+  const placeholderOnlyLiveTracking =
+    Array.isArray(value) && value.length === 1 && value[0] === "Live Tracking";
+
+  if (!Array.isArray(value) || value.length === 0 || placeholderOnlyLiveTracking) {
+    return Array.isArray(fallback) && fallback.length > 0 ? fallback : ["Live Tracking"];
+  }
+
+  return value;
+};
+
+const normalizeBus = (bus, index = 0) => ({
+  ...(() => {
+    const id = bus.id || `bus-${index + 1}`;
+    const base = defaultBusCatalog[id] || {};
+
+    return {
+      id,
+      name: pickPreferredString(bus.name, base.name || `Bus ${index + 1}`),
+      operator: pickPreferredString(bus.operator, base.operator || "TicketWale Partner", ["TicketWale Partner"]),
+      startTime: pickPreferredString(bus.startTime, base.startTime || "--:--", ["--:--"]),
+      reachTime: pickPreferredString(bus.reachTime, base.reachTime || "--:--", ["--:--"]),
+      duration: pickPreferredString(bus.duration, base.duration || "--", ["--"]),
+      rating: Number(bus.rating ?? base.rating ?? 4),
+      price: Number(bus.price ?? base.price ?? 0),
+      busType: pickPreferredString(bus.busType, base.busType || "Seater", ["Seater"]),
+      amenities: pickPreferredAmenities(bus.amenities, base.amenities),
+      totalSeats: Number(bus.totalSeats ?? base.totalSeats ?? 40),
+      bookedSeats: Array.isArray(bus.bookedSeats)
+        ? bus.bookedSeats
+        : Array.isArray(base.bookedSeats)
+          ? base.bookedSeats
+          : [],
+    };
+  })(),
+});
+
+export default function BookingPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const from = searchParams.get("from") || "Indore";
+  const to = searchParams.get("to") || "Pune";
+  const date = searchParams.get("date") || "";
+
+  const [buses, setBuses] = useState(defaultBuses);
+  const [selectedBusId, setSelectedBusId] = useState(defaultBuses[0].id);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState("recommended");
+
+  useEffect(() => {
+    const saved = window.localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const normalized = parsed.map((bus, index) => normalizeBus(bus, index));
+          setBuses(normalized);
+          setSelectedBusId(normalized[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to parse saved bus inventory", error);
+      }
+    } else {
+      setBuses(defaultBuses.map((bus, index) => normalizeBus(bus, index)));
+      setSelectedBusId(defaultBuses[0].id);
+    }
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(buses));
+  }, [buses]);
+
+  const selectedBus = useMemo(
+    () => buses.find((bus) => bus.id === selectedBusId) || null,
+    [buses, selectedBusId]
+  );
+
+  const bookedSeatSet = useMemo(
+    () => new Set(selectedBus?.bookedSeats || []),
+    [selectedBus]
+  );
+
+  const displayBuses = useMemo(() => {
+    const filtered = buses.filter((bus) => {
+      const query = searchTerm.trim().toLowerCase();
+      if (!query) {
+        return true;
+      }
+
+      return (
+        bus.name.toLowerCase().includes(query) ||
+        bus.operator.toLowerCase().includes(query) ||
+        bus.busType.toLowerCase().includes(query)
+      );
+    });
+
+    const sorted = [...filtered];
+    if (sortBy === "price-low") {
+      sorted.sort((a, b) => a.price - b.price);
+    } else if (sortBy === "price-high") {
+      sorted.sort((a, b) => b.price - a.price);
+    } else if (sortBy === "rating") {
+      sorted.sort((a, b) => b.rating - a.rating);
+    } else {
+      sorted.sort((a, b) => getAvailableSeats(b) - getAvailableSeats(a));
+    }
+
+    return sorted;
+  }, [buses, searchTerm, sortBy]);
+
+  const availableSeatNumbers = useMemo(() => {
+    if (!selectedBus) {
+      return [];
+    }
+
+    const booked = new Set(selectedBus.bookedSeats);
+    const numbers = [];
+
+    for (let seatNumber = 1; seatNumber <= selectedBus.totalSeats; seatNumber += 1) {
+      if (!booked.has(seatNumber)) {
+        numbers.push(seatNumber);
+      }
+    }
+
+    return numbers;
+  }, [selectedBus]);
+
+  const seatLayoutRows = useMemo(() => {
+    if (!selectedBus) {
+      return [];
+    }
+
+    const sleeper = isSleeperType(selectedBus.busType);
+    const columns = sleeper ? ["L1", "L2", "AISLE", "R1"] : ["L1", "L2", "AISLE", "R1", "R2"];
+    const rows = [];
+    let seatNumber = 1;
+
+    while (seatNumber <= selectedBus.totalSeats) {
+      const rowSeats = columns.map((column) => {
+        if (column === "AISLE") {
+          return { type: "aisle", key: `aisle-${rows.length}` };
+        }
+
+        if (seatNumber > selectedBus.totalSeats) {
+          return { type: "empty", key: `empty-${rows.length}-${column}` };
+        }
+
+        const currentSeat = {
+          type: "seat",
+          number: seatNumber,
+          key: `seat-${seatNumber}`,
+        };
+
+        seatNumber += 1;
+        return currentSeat;
+      });
+
+      rows.push(rowSeats);
+    }
+
+    return rows;
+  }, [selectedBus]);
+
+  const totalFare = selectedBus ? selectedSeats.length * selectedBus.price : 0;
+
+  const handleSeatToggle = (seatNumber) => {
+    if (!selectedBus || bookedSeatSet.has(seatNumber)) {
+      return;
+    }
+
+    setSelectedSeats((prevSeats) => {
+      if (prevSeats.includes(seatNumber)) {
+        return prevSeats.filter((seat) => seat !== seatNumber);
+      }
+      return [...prevSeats, seatNumber].sort((a, b) => a - b);
+    });
+  };
+
+  const handleSelectBus = (busId) => {
+    setSelectedBusId(busId);
+    setSelectedSeats([]);
+  };
+
+  const handleProceedToPayment = () => {
+    if (!selectedBus || selectedSeats.length === 0) {
+      return;
+    }
+
+    const updatedBuses = buses.map((bus) => {
+      if (bus.id !== selectedBus.id) {
+        return bus;
+      }
+
+      return {
+        ...bus,
+        bookedSeats: [...bus.bookedSeats, ...selectedSeats],
+      };
+    });
+
+    setBuses(updatedBuses);
+
+    const query = new URLSearchParams({
+      from,
+      to,
+      date,
+      busName: selectedBus.name,
+      startTime: selectedBus.startTime,
+      reachTime: selectedBus.reachTime,
+      seats: selectedSeats.join(","),
+      seatCount: String(selectedSeats.length),
+      fare: String(totalFare),
+    }).toString();
+
+    router.push(`/booking/passenger?${query}`);
+  };
 
   return (
-    <div>
-      {/* Navigation Bar */}
-      <nav className="fixed top-0 left-0 w-full z-50 flex justify-between items-center px-8 py-4 text-white bg-black shadow-md">
-        <div className="text-xl font-bold">Booking.com</div>
-        <div className="space-x-6">
-          <a href="#" className="hover:text-gray-300">
-            Home
-          </a>
-          {/* import {Link} from 'react-router-dom'; // Inside your component */}
-          <Link href="/login" className="hover:text-gray-300">
-            Sign in
-          </Link>
-          <a href="#" className="hover:text-gray-300">
-            Help
-          </a>
-        </div>
-      </nav>
-
-      {/* Hero Section */}
-      <div className="bg-black text-white px-8 py-12 flex flex-col md:flex-row items-start md:items-center justify-between">
-        {/* Left Content */}
-        <div className="max-w-xl ml-14">
-          <h1 className="text-4xl font-bold mb-4">List your</h1>
-          <h1 className="text-4xl font-bold mb-4 text-yellow-300">
-            <Typewriter
-              words={[
-                "Hotels",
-                "Trains",
-                "Apartments",
-                "Buses",
-                "Flights",
-                "Tours",
-              ]}
-              loop={0}
-              cursor
-              cursorStyle="|"
-              typeSpeed={100}
-              deleteSpeed={70}
-              delaySpeed={1000}
-            />
-          </h1>
-          <h1 className="text-4xl font-bold mb-4">on Booking.com</h1>
-          <p className="text-xl mt-4">
-            List on one of the world’s most downloaded travel apps to earn more,
-            faster and expand into new markets.
-          </p>
-        </div>
-
-        {/* Right Content */}
-        <Box className="bg-white text-black rounded-lg p-6 w-full md:w-96 shadow-md mr-14 border-[4px] border-yellow-400">
-          <h2 className="text-xl font-semibold mb-4">Register for free</h2>
-          <ul className="list-disc list-inside space-y-2 mb-4">
-            <li>45% of hosts get their first booking within a week</li>
-            <li>Choose instant bookings or Request to Book</li>
-            <li>We'll facilitate payments for you</li>
-          </ul>
-          <hr className="my-4" />
-          <Button
-            type="primary"
-            block
-            style={{
-              height: "48px",
-              fontSize: "16px",
-              borderRadius: "8px",
-              backgroundColor: "black",
-            }}
-          >
-            Get Started Now <ArrowRightAltIcon />
-          </Button>
-
-          <div className="mt-6">
-            <h1 className="text-base font-medium">
-              Already started a registration?
-            </h1>
-            <p className="text-sm text-gray-700">
-              <Link href="/register" className="text-blue-600 hover:underline">
-                Continue your registration
-              </Link>
-            </p>
-          </div>
-        </Box>
-      </div>
-
-      <div className="bg-[#FFFBEB]  px-6 py-12">
-        {/* Heading */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-black">
-            Host worry-free. We’ve got your back
-          </h1>
-        </div>
-
-        {/* Feature Sections */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-10">
-          {/* Feature 1 */}
-          <Box className=" shadow-md rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 text-black">
-              Your rental, your rules
-            </h2>
-            <ul className="list-disc list-inside text-gray-700 space-y-2">
-              <p className="flex gap-2">
-                <ArrowForwardIcon />
-                Accept or decline bookings with Request to Book
-              </p>
-              <p className="flex gap-2">
-                <ArrowForwardIcon />
-                Manage your guests' expectations by setting up clear house
-                rules.
-              </p>
-            </ul>
-          </Box>
-
-          {/* Feature 2 */}
-          <Box className=" shadow-md rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 text-black">
-              Get to know your guests
-            </h2>
-            <ul className="list-disc list-inside text-gray-700 space-y-2">
-              <p className="flex gap-2">
-                <ArrowForwardIcon />
-                Chat with your guests before accepting their stay with
-                pre-booking messaging.*
-              </p>
-              <p className="flex gap-2">
-                <ArrowForwardIcon />
-                Access guest travel history insights.
-              </p>
-            </ul>
-          </Box>
-
-          {/* Feature 3 */}
-          <Box className=" shadow-md rounded-lg p-6">
-            <h2 className="text-xl font-semibold mb-4 text-black">
-              Stay protected
-            </h2>
-            <ul className="list-disc list-inside text-gray-700 space-y-2">
-              <p className="flex gap-2">
-                <ArrowForwardIcon />
-                Protection against liability claims from guests and neighbours
-                up to €/$/£1,000,000 for every reservation.
-              </p>
-              <p className="flex gap-2">
-                <ArrowForwardIcon />
-                Selection of damage protection options for you to choose.
-              </p>
-            </ul>
-          </Box>
-        </div>
-
-        {/* Call to Action Button */}
-        <div className="flex flex-col gap-5">
-          <div>
-            <Button
-              type="primary"
-              style={{
-                height: "48px",
-                fontSize: "16px",
-                borderRadius: "8px",
-                padding: "0 24px",
-                backgroundColor: "black",
-              }}
-            >
-              Host with us today
-            </Button>
-          </div>
-
-          <p className="text-gray-800">
-            *Currently available for guest bookings made via iOS.
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-[#F9FAFB] px-6 py-12">
-        {/* Section Header */}
-        <div className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-black">
-            Manage your earnings effortlessly with Booking.com Payments
-          </h1>
-        </div>
-
-        {/* Payment Features */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 px-4 md:px-12 py-10">
-          {/* Left Column */}
-          <Box className="bg-white w-full max-w-xl p-6 rounded-lg shadow-md space-y-6 mx-auto">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Simplified Payments
-              </h2>
-              <p className="text-gray-700 mt-1 flex items-start gap-2">
-                <ArrowForwardIcon className="mt-1" />
-                We facilitate the payment process for you, freeing up your time
-                to grow your business.
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Secure and Stable Payouts
-              </h2>
-              <p className="text-gray-700 mt-1 flex items-start gap-2">
-                <ArrowForwardIcon className="mt-1" />
-                Whenever guests complete prepaid reservations at your property
-                and pay online, you are guaranteed payment.
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Better Management of Your Cash Flow
-              </h2>
-              <p className="text-gray-700 mt-1 flex items-start gap-2">
-                <ArrowForwardIcon className="mt-1" />
-                Choose your payout method and timing based on regional
-                availability.
-              </p>
-            </div>
-          </Box>
-
-          {/* Right Column */}
-          <Box className="bg-white w-full max-w-xl p-6 rounded-lg shadow-md space-y-6 mx-auto">
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Daily Payment Releases in Select Areas
-              </h2>
-              <p className="text-gray-700 mt-1 flex items-start gap-2">
-                <ArrowForwardIcon className="mt-1" />
-                Get payouts faster! We’ll send your payouts 24 hours after guest
-                checkout.
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Manage All Your Listings in One Place
-              </h2>
-              <p className="text-gray-700 mt-1 flex items-start gap-2">
-                <ArrowForwardIcon className="mt-1" />
-                Save time managing finances with group invoicing and
-                reconciliation.
-              </p>
-            </div>
-
-            <div>
-              <h2 className="text-xl font-semibold text-gray-800">
-                Improved Risk Protection
-              </h2>
-              <p className="text-gray-700 mt-1 flex items-start gap-2">
-                <ArrowForwardIcon className="mt-1" />
-                We help you stay compliant with regulatory changes and reduce
-                the risk of fraud and chargebacks.
-              </p>
-            </div>
-          </Box>
-        </div>
-      </div>
-
-      <div className="bg-[#FFFBEB] px-6 py-10">
-        <div className="text-center mb-10">
-          <h1 className="text-3xl font-bold text-black">
-            Get started quickly and keep progressing
-          </h1>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {/* Card 1 */}
-          <Box className="bg-white rounded-lg shadow-md p-6 text-center">
-            <img
-              src="https://t-cf.bstatic.com/design-assets/assets/v3.155.1/illustrations-partner-thumbnails/Review@2x.png"
-              alt="Import property"
-              className="w-24 h-24 mx-auto mb-4"
-            />
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Import your property details
-            </h2>
-            <p className="text-gray-700">
-              Seamlessly import your property information from other travel
-              websites and avoid overbooking with calendar sync.
-            </p>
-          </Box>
-
-          {/* Card 2 */}
-          <Box className="bg-white rounded-lg shadow-md p-6 text-center">
-            <img
-              src="https://t-cf.bstatic.com/design-assets/assets/v3.155.1/illustrations-partner-thumbnails/Puzzle@2x.png"
-              alt="Review scores"
-              className="w-24 h-24 mx-auto mb-4"
-            />
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Start fast with review scores
-            </h2>
-            <p className="text-gray-700">
-              Your review scores on other travel websites are converted and
-              displayed on your property page before your first Booking.com
-              guests leave their reviews.
-            </p>
-          </Box>
-
-          {/* Card 3 */}
-          <Box className="bg-white rounded-lg shadow-md p-6 text-center">
-            <img
-              src="https://t-cf.bstatic.com/design-assets/assets/v3.155.1/illustrations-partner-thumbnails/Search@2x.png"
-              alt="Stand out"
-              className="w-24 h-24 mx-auto mb-4"
-            />
-            <h2 className="text-xl font-semibold text-gray-800 mb-2">
-              Stand out in the market
-            </h2>
-            <p className="text-gray-700">
-              The "New to Booking.com" label helps you stand out in our search
-              results.
-            </p>
-          </Box>
-        </div>
-
-        <div className="text-left">
-          <Link href="/login">
-            <Button
-              type="primary"
-              className="px-6 py-2 text-lg font-medium rounded-md"
-              style={{
-                backgroundColor: "black",
-                borderColor: "#1890ff",
-                fontSize: "18px",
-                height: "50px",
-              }}
-            >
-              Get started today
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <div
-        style={{
-          backgroundImage: `url("/wirld.jpg")`,
-          height: "100vh",
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-          color: "white",
-          padding: "4rem",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "center",
-        }}
-      >
-        <div style={{ marginBottom: "2rem" }}>
-          <h1
-            style={{ fontSize: "2.5rem", fontWeight: "bold", color: "black" }}
-          >
-            Reach a unique global customer base
-          </h1>
-        </div>
-
-        <div style={{ display: "flex", gap: "2rem", flexWrap: "wrap" }}>
-          <Box className=" text-black bg-opacity-60 p-6 rounded-md min-w-[250px]">
-            <h1 className="text-4xl font-bold">1.8+ billion</h1>
-            <p className="text-xl">holiday rental guests since 2010.</p>
-          </Box>
-
-          <Box className=" text-black bg-opacity-60 p-6 rounded-md min-w-[250px]">
-            <h1 className="text-4xl font-bold">1 in every 3</h1>
-            <p className="text-xl">
-              room nights booked in 2024 was a holiday rental.
-            </p>
-          </Box>
-
-          <Box className=" text-black bg-opacity-60 p-6 rounded-md min-w-[250px]">
-            <h1 className="text-4xl font-bold">48% of nights</h1>
-            <p className="text-xl">
-              booked were for international stays at the end of 2023.
-            </p>
-          </Box>
-        </div>
-
-        <div className="mt-8">
-          <Link href="/signup">
-            <Button
-              type="primary"
-              style={{
-                height: "50px",
-                padding: "12px 24px",
-                fontSize: "20px",
-                borderRadius: "8px",
-                backgroundColor: "black",
-              }}
-            >
-              Reach new guests today
-            </Button>
-          </Link>
-        </div>
-      </div>
-
-      <Box sx={{ px: 4, py: 6, backgroundColor: "white" }}>
-        <Typography variant="h4" fontWeight="bold" className="text-center mb-8">
-          What hosts like you say
-        </Typography>
-
+    <Box
+      className="min-h-screen px-4 py-8 md:px-8"
+      sx={{
+        background:
+          "linear-gradient(180deg, #f4f0ff 0%, #fff6e8 40%, #fffdf7 100%)",
+      }}
+    >
+      <Box className="mx-auto w-full max-w-6xl">
         <Box
-          display="flex"
-          flexWrap="wrap"
-          justifyContent="center"
-          gap={4}
-          sx={{ maxWidth: "1200px", mx: "auto" }}
+          className="relative mb-6 overflow-hidden rounded-[28px] p-6 md:p-8"
+          sx={{
+            background: "linear-gradient(135deg, #111827 0%, #292c6d 45%, #5b5ea6 100%)",
+            color: "white",
+            boxShadow: "0 22px 56px rgba(17, 24, 39, 0.2)",
+          }}
         >
-          {testimonialData.map((testimonial, idx) => (
-            <Box
-              key={idx}
-              sx={{
-                bgcolor: "#f9f9f9",
-                p: 3,
-                borderRadius: 2,
-                width: 300,
-                height: 300,
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                border: "2px solid #b58900",
-              }}
-            >
-              <Typography sx={{ fontSize: "0.95rem" }}>
-                {testimonial.text}
-              </Typography>
-              <Box display="flex" alignItems="center" gap={2}>
-                <img
-                  src={testimonial.img}
-                  alt={testimonial.name}
-                  style={{
-                    width: 60,
-                    height: 60,
-                    borderRadius: "50%",
-                    objectFit: "cover",
-                  }}
-                />
-                <Box>
-                  <Typography fontWeight="bold">{testimonial.name}</Typography>
-                  <Typography variant="body2">{testimonial.title}</Typography>
+          <Box
+            sx={{
+              position: "absolute",
+              right: -40,
+              top: -36,
+              width: 180,
+              height: 180,
+              borderRadius: "999px",
+              background: "radial-gradient(circle, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.01) 70%)",
+            }}
+          />
+          <Box
+            sx={{
+              position: "absolute",
+              left: -28,
+              bottom: -36,
+              width: 140,
+              height: 140,
+              borderRadius: "999px",
+              background: "radial-gradient(circle, rgba(255,255,255,0.16) 0%, rgba(255,255,255,0.01) 70%)",
+            }}
+          />
+          <Typography variant="overline" sx={{ letterSpacing: "0.16em", opacity: 0.8 }}>
+            Bus Search Results
+          </Typography>
+          <Typography variant="h3" sx={{ fontWeight: 900, mt: 1, mb: 1.5, fontSize: { xs: "2rem", md: "2.6rem" } }}>
+            {from} to {to}
+          </Typography>
+          <Typography variant="body1" sx={{ opacity: 0.92, mb: 3 }}>
+            {date ? `Travel date: ${date}` : "Select your preferred bus and seats to continue."}
+          </Typography>
+          <Box className="flex flex-wrap gap-2">
+            <Chip label={`${buses.length} Buses Available`} sx={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700 }} />
+            <Chip label="Instant Booking" sx={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700 }} />
+            <Chip label="Live Seat Inventory" sx={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700 }} />
+            <Chip label="Verified Operators" sx={{ backgroundColor: "rgba(255,255,255,0.15)", color: "#fff", fontWeight: 700 }} />
+          </Box>
+        </Box>
+
+        <Box className="mb-6 grid grid-cols-1 gap-3 rounded-2xl border border-[#e5e7eb] bg-white/85 p-4 md:grid-cols-[1fr_220px] md:p-5">
+          <TextField
+            label="Search bus, operator, or type"
+            value={searchTerm}
+            onChange={(event) => setSearchTerm(event.target.value)}
+            fullWidth
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "white" } }}
+          />
+          <TextField
+            select
+            label="Sort by"
+            value={sortBy}
+            onChange={(event) => setSortBy(event.target.value)}
+            fullWidth
+            sx={{ "& .MuiOutlinedInput-root": { borderRadius: "14px", backgroundColor: "white" } }}
+          >
+            <MenuItem value="recommended">Recommended</MenuItem>
+            <MenuItem value="price-low">Price: Low to High</MenuItem>
+            <MenuItem value="price-high">Price: High to Low</MenuItem>
+            <MenuItem value="rating">Top Rated</MenuItem>
+          </TextField>
+        </Box>
+
+        <Box className="grid grid-cols-1 gap-4">
+          {displayBuses.map((bus) => {
+            const isSelected = selectedBusId === bus.id;
+            return (
+              <Box
+                key={bus.id}
+                className="rounded-2xl border bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl md:p-5"
+                sx={{
+                  borderColor: isSelected ? "#818cf8" : "#e5e7eb",
+                  boxShadow: isSelected
+                    ? "0 16px 28px rgba(99, 102, 241, 0.18)"
+                    : "0 8px 18px rgba(15, 23, 42, 0.05)",
+                }}
+              >
+                <Box className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                  <Box>
+                    <Typography variant="h6" sx={{ fontWeight: 900, color: "#111827" }}>
+                      {bus.name}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#4b5563", mb: 0.5 }}>
+                      {bus.operator} | {bus.busType}
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: "#4b5563", mb: 1 }}>
+                      Departure: {bus.startTime} | Arrival: {bus.reachTime} | Duration: {bus.duration}
+                    </Typography>
+
+                    <Box className="mb-2 flex flex-wrap gap-2">
+                      {bus.amenities.map((amenity) => (
+                        <Chip
+                          key={`${bus.id}-${amenity}`}
+                          label={amenity}
+                          size="small"
+                          sx={getAmenityChipSx(amenity)}
+                        />
+                      ))}
+                    </Box>
+
+                    <Typography variant="body2" sx={{ color: "#4b5563" }}>
+                      Rating: <strong>{bus.rating}</strong> | Seats Left: <strong>{getAvailableSeats(bus)}</strong>
+                    </Typography>
+                  </Box>
+
+                  <Box className="flex flex-col items-start gap-2 md:items-end">
+                    <Typography variant="h5" sx={{ fontWeight: 900, color: "#111827" }}>
+                      Rs {bus.price}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: "#6b7280" }}>
+                      per seat
+                    </Typography>
+
+                    <Button
+                      variant={isSelected ? "contained" : "outlined"}
+                      onClick={() => handleSelectBus(bus.id)}
+                      sx={{
+                        mt: 1,
+                        textTransform: "none",
+                        minWidth: 152,
+                        borderRadius: "12px",
+                        fontWeight: 700,
+                        background: isSelected
+                          ? "linear-gradient(135deg, #5b5ea6 0%, #292c6d 100%)"
+                          : "transparent",
+                        borderColor: "#5b5ea6",
+                        color: isSelected ? "#fff" : "#5b5ea6",
+                        "&:hover": {
+                          background: isSelected
+                            ? "linear-gradient(135deg, #4a4d8f 0%, #20235a 100%)"
+                            : "rgba(91, 94, 166, 0.08)",
+                          borderColor: "#5b5ea6",
+                        },
+                      }}
+                    >
+                      {isSelected ? "Selected" : "Select Bus"}
+                    </Button>
+                  </Box>
                 </Box>
               </Box>
-            </Box>
-          ))}
+            );
+          })}
         </Box>
 
-        <Box display="flex" mt={5}>
-          <Button
-            style={{
-              backgroundColor: "black",
-              color: "white",
-              height: "50px",
-              fontSize: "20px",
-            }}
-            variant="contained"
-            sx={{
-              backgroundColor: "black",
-              color: "white",
-              height: 50,
-              px: 4,
-              textTransform: "none",
-              "&:hover": {
-                backgroundColor: "#333",
-              },
-            }}
-            className="ml-24"
+        {displayBuses.length === 0 && (
+          <Box className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-white p-6 text-center">
+            <Typography variant="h6" sx={{ fontWeight: 700, color: "#111827", mb: 1 }}>
+              No buses found
+            </Typography>
+            <Typography variant="body2" sx={{ color: "#6b7280" }}>
+              Try another search keyword or change sort options.
+            </Typography>
+          </Box>
+        )}
+
+        <Box className="mt-6 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm md:p-6">
+          <Typography variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
+            Select Seats {selectedBus ? `- ${selectedBus.name}` : ""}
+          </Typography>
+
+          {selectedBus && (
+            <Box
+              className="mb-4 rounded-2xl p-4"
+              sx={{
+                background: "linear-gradient(135deg, #eef2ff 0%, #fff7ed 100%)",
+                border: "1px solid #dbeafe",
+              }}
+            >
+              <Typography variant="subtitle1" sx={{ color: "#111827", fontWeight: 800, mb: 1 }}>
+                {selectedBus.name} | {selectedBus.operator}
+              </Typography>
+              <Box className="mb-1 flex flex-wrap gap-2">
+                <Chip label={`Bus Type: ${selectedBus.busType}`} size="small" sx={{ backgroundColor: "#e0e7ff", color: "#312e81", fontWeight: 700 }} />
+                <Chip label={`Duration: ${selectedBus.duration}`} size="small" sx={{ backgroundColor: "#ffedd5", color: "#9a3412", fontWeight: 700 }} />
+                <Chip label={`Fare: Rs ${selectedBus.price}/seat`} size="small" sx={{ backgroundColor: "#dcfce7", color: "#166534", fontWeight: 700 }} />
+              </Box>
+              <Typography variant="body2" sx={{ color: "#4b5563", mb: 1 }}>
+                {selectedBus.startTime} to {selectedBus.reachTime}
+              </Typography>
+              <Box className="flex flex-wrap gap-2">
+                {selectedBus.amenities.map((amenity) => (
+                  <Chip
+                    key={`selected-${amenity}`}
+                    label={amenity}
+                    size="small"
+                    sx={{ backgroundColor: "#ffffff", color: "#374151", fontWeight: 600, border: "1px solid #e5e7eb" }}
+                  />
+                ))}
+              </Box>
+            </Box>
+          )}
+
+          <Box className="mb-3 flex flex-wrap gap-2">
+            <Chip label="Available" size="small" sx={{ backgroundColor: "#dbeafe", color: "#1e40af", fontWeight: 700 }} />
+            <Chip label="Selected" size="small" sx={{ backgroundColor: "#ede9fe", color: "#5b21b6", fontWeight: 700 }} />
+            <Chip label="Booked" size="small" sx={{ backgroundColor: "#fecaca", color: "#991b1b", fontWeight: 700 }} />
+          </Box>
+
+          <Box
+            className="mb-4 rounded-xl border border-dashed border-slate-300 p-3"
+            sx={{ background: "linear-gradient(180deg, #ffffff 0%, #f5f7ff 100%)" }}
           >
-            Join hosts like you
+            <Box className="mb-2 flex items-center justify-between">
+              <Typography variant="caption" sx={{ color: "#6b7280", display: "block" }}>
+                Front of Bus
+              </Typography>
+              <Chip label="Driver" size="small" sx={{ backgroundColor: "#111827", color: "#fff" }} />
+            </Box>
+
+            <Box className="flex flex-col gap-2">
+              {seatLayoutRows.map((row, rowIndex) => (
+                <Box key={`row-${rowIndex}`} className="flex items-center gap-2">
+                  <Typography variant="caption" sx={{ width: 26, color: "#6b7280" }}>
+                    {rowIndex + 1}
+                  </Typography>
+
+                  {row.map((item) => {
+                    if (item.type === "aisle") {
+                      return <Box key={item.key} sx={{ width: 22 }} />;
+                    }
+
+                    if (item.type === "empty") {
+                      return <Box key={item.key} sx={{ width: isSleeperType(selectedBus?.busType) ? 54 : 44 }} />;
+                    }
+
+                    const isBooked = bookedSeatSet.has(item.number);
+                    const isSelected = selectedSeats.includes(item.number);
+
+                    return (
+                      <Button
+                        key={item.key}
+                        onClick={() => handleSeatToggle(item.number)}
+                        disabled={isBooked}
+                        sx={{
+                          minWidth: isSleeperType(selectedBus?.busType) ? 54 : 44,
+                          height: isSleeperType(selectedBus?.busType) ? 34 : 38,
+                          px: 0,
+                          fontSize: "0.72rem",
+                          borderRadius: isSleeperType(selectedBus?.busType) ? "8px" : "10px",
+                          border: "1px solid #d1d5db",
+                          color: isSelected ? "#fff" : "#111827",
+                          background: isBooked
+                            ? "#ef4444"
+                            : isSelected
+                              ? "linear-gradient(135deg, #5b5ea6 0%, #292c6d 100%)"
+                              : "linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%)",
+                          "&:hover": {
+                            background: isBooked
+                              ? "#ef4444"
+                              : isSelected
+                                ? "linear-gradient(135deg, #4a4d8f 0%, #20235a 100%)"
+                                : "linear-gradient(180deg, #f8fafc 0%, #dbeafe 100%)",
+                          },
+                          "&.Mui-disabled": {
+                            color: "#fff",
+                            background: "#ef4444",
+                            opacity: 1,
+                          },
+                        }}
+                      >
+                        {`S${item.number}`}
+                      </Button>
+                    );
+                  })}
+                </Box>
+              ))}
+            </Box>
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Typography variant="body1" sx={{ color: "#111827", mb: 1 }}>
+            Selected Seats: {selectedSeats.length > 0 ? selectedSeats.join(", ") : "None"}
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#4b5563", mb: 1 }}>
+            Available Seats: {availableSeatNumbers.length}
+          </Typography>
+          <Typography variant="body1" sx={{ color: "#111827", mb: 3 }}>
+            Total Fare: Rs {totalFare}
+          </Typography>
+
+          <Button
+            variant="contained"
+            disabled={!selectedBus || selectedSeats.length === 0}
+            onClick={handleProceedToPayment}
+            sx={{
+              textTransform: "none",
+              backgroundColor: "#5b5ea6",
+              "&:hover": { backgroundColor: "#4a4d8f" },
+              "&.Mui-disabled": { backgroundColor: "#c7c9de", color: "white" },
+            }}
+          >
+            Next: Passenger Details
           </Button>
         </Box>
       </Box>
-    </div>
+    </Box>
   );
-};
-
-export default Navbar;
+}

@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Box } from "@mui/material";
 import { Button, Select } from "antd";
 import {
@@ -12,11 +12,76 @@ import {
 } from "react-icons/fa";
 import LocationOnIcon from "@mui/icons-material/LocationOn";
 
-const handleChange = (value) => {
-  console.log(`selected ${value}`);
-};
-
 export default function ContactPage() {
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    mobile: "",
+    userType: "",
+    message: "",
+  });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState({ type: "", text: "" });
+
+  const handleChange = (field) => (event) => {
+    setFormData((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
+  const handleUserTypeChange = (value) => {
+    setFormData((prev) => ({ ...prev, userType: value }));
+  };
+
+  const handleSubmit = async () => {
+    setSubmitStatus({ type: "", text: "" });
+
+    if (!formData.email || !formData.mobile || !formData.message) {
+      setSubmitStatus({
+        type: "error",
+        text: "Email, mobile number, and message are required.",
+      });
+      return;
+    }
+
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setSubmitStatus({
+          type: "error",
+          text: data.error || "Unable to send your message right now.",
+        });
+        return;
+      }
+
+      setSubmitStatus({
+        type: "success",
+        text: "Your message has been saved successfully.",
+      });
+      setFormData({
+        name: "",
+        email: "",
+        mobile: "",
+        userType: "",
+        message: "",
+      });
+    } catch (error) {
+      setSubmitStatus({
+        type: "error",
+        text: "Something went wrong. Please try again.",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-white text-white flex flex-col">
       <nav className="fixed top-0 left-0 w-full z-50 bg-[#5b5ea6] shadow-md px-4 sm:px-6 py-3 sm:py-4 flex justify-between items-center">
@@ -66,6 +131,8 @@ export default function ContactPage() {
               <input
                 type="text"
                 placeholder="Enter Your Name"
+                value={formData.name}
+                onChange={handleChange("name")}
                 style={{ color: "black" }}
                 className="w-full p-2 sm:p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
               />
@@ -76,6 +143,8 @@ export default function ContactPage() {
               <input
                 type="email"
                 placeholder="Enter Your Email"
+                value={formData.email}
+                onChange={handleChange("email")}
                 style={{ color: "black" }}
                 className="w-full p-2 sm:p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
               />
@@ -86,6 +155,8 @@ export default function ContactPage() {
               <input
                 type="tel"
                 placeholder="Enter Your Mobile Number"
+                value={formData.mobile}
+                onChange={handleChange("mobile")}
                 style={{ color: "black" }}
                 className="w-full p-2 sm:p-3 rounded-md border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm sm:text-base"
               />
@@ -94,10 +165,11 @@ export default function ContactPage() {
             <div>
               <label className="block text-gray-700 mb-1 text-sm sm:text-base">User Type</label>
               <Select
-                defaultValue="Select"
+                value={formData.userType || "Select"}
                 style={{ width: "100%", height: "40px" }}
-                onChange={handleChange}
+                onChange={handleUserTypeChange}
                 options={[
+                  { value: "Select", label: "Select", disabled: true },
                   { value: "Captain", label: "Captain" },
                   { value: "customer", label: "Customer" },
                 ]}
@@ -109,15 +181,29 @@ export default function ContactPage() {
               <textarea
                 placeholder="Your Message"
                 rows={4}
+                value={formData.message}
+                onChange={handleChange("message")}
                 style={{ borderRadius: "15px", color: "black" }}
                 className="w-full h-24 sm:h-32 lg:h-40 px-3 sm:px-4 py-2 bg-gray-50 border border-gray-300 resize-none outline-none focus:ring-2 focus:ring-purple-500 hover:shadow-md transition duration-200 text-sm sm:text-base"
               />
             </div>
 
+            {submitStatus.text && (
+              <p
+                className={`text-sm ${
+                  submitStatus.type === "success" ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {submitStatus.text}
+              </p>
+            )}
+
             <div className="mt-auto">
               <Button
                 style={{ backgroundColor: "#5b5ea6", color: "white" }}
                 type="primary"
+                onClick={handleSubmit}
+                loading={submitting}
                 className="w-full h-10 sm:h-12 text-sm sm:text-base font-semibold transition-transform hover:scale-105"
               >
                 Send Message
