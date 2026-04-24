@@ -96,24 +96,28 @@
 // }
 
 
-
-
-// app/api/register/route.js
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import clientPromise from "@/lib/mongodb";
 
-// Ensure Node runtime (bcrypt doesn't work on Edge)
 export const runtime = "nodejs";
 
 export async function POST(request) {
   try {
+    if (!process.env.MONGODB_URI) {
+      throw new Error("MONGODB_URI is not defined");
+    }
+
+    if (!process.env.JWT_SECRET) {
+      throw new Error("JWT_SECRET is not defined");
+    }
+
     const client = await clientPromise;
-    const db = client.db(); // defaults to DB in your URI (Ticket_wale)
+    const db = client.db();
+
     const { name, email, password, phone } = await request.json();
 
-    // Validate input
     if (!name || !email || !password) {
       return NextResponse.json(
         { error: "Name, email, and password are required" },
@@ -121,10 +125,14 @@ export async function POST(request) {
       );
     }
 
-    // Validate email format (basic)
-    const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json({ error: "Please provide a valid email" }, { status: 400 });
+    const normalizedEmail = email.toLowerCase().trim();
+
+    const emailRegex = /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/;
+    if (!emailRegex.test(normalizedEmail)) {
+      return NextResponse.json(
+        { error: "Please provide a valid email" },
+        { status: 400 }
+      );
     }
 
     if (password.length < 6) {
@@ -134,8 +142,10 @@ export async function POST(request) {
       );
     }
 
-    // Check existing user
-    const existingUser = await db.collection("users").findOne({ email });
+    const existingUser = await db.collection("users").findOne({
+      email: normalizedEmail,
+    });
+
     if (existingUser) {
       return NextResponse.json(
         { error: "User with this email already exists" },
@@ -143,15 +153,13 @@ export async function POST(request) {
       );
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create user
     const newUser = {
-      name,
-      email,
+      name: name.trim(),
+      email: normalizedEmail,
       password: hashedPassword,
-      phone: phone || "",
+      phone: phone?.trim() || "",
       role: "user",
       isVerified: false,
       profileImage: "",
@@ -166,26 +174,43 @@ export async function POST(request) {
       { projection: { password: 0 } }
     );
 
-    // Ensure JWT secret exists
-    if (!process.env.JWT_SECRET) {
+    if (!savedUser) {
       return NextResponse.json(
-        { error: "Server is missing JWT_SECRET" },
+        { error: "Failed to fetch saved user" },
         { status: 500 }
       );
     }
 
     const token = jwt.sign(
-      { userId: savedUser._id, email: savedUser.email, role: savedUser.role },
+      {
+        userId: savedUser._id.toString(),
+        email: savedUser.email,
+        role: savedUser.role || "user",
+      },
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
 
     return NextResponse.json(
-      { message: "User registered successfully", user: savedUser, token },
+      {
+        message: "User registered successfully",
+        user: {
+          ...savedUser,
+          _id: savedUser._id.toString(),
+        },
+        token,
+      },
       { status: 201 }
     );
   } catch (error) {
     console.error("Registration error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    return NextResponse.json(
+      {
+        error: "Internal server error",
+        details: error.message,
+      },
+      { status: 500 }
+    );
   }
 }
