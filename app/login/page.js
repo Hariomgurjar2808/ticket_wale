@@ -72,12 +72,12 @@ export default function Page() {
 
   return (
     <div className=" min-h-screen bg-gradient-to-br animate-fadeIn bg-[#FFFBEB]">
-      <div className="flex flex-row  min-h-screen bg-gradient-to-br  animate-fadeIn  ">
+      <div className="flex flex-col lg:flex-row min-h-screen bg-gradient-to-br animate-fadeIn">
         {/* <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-500 via-rose-500 to-pink-500 tracking-wider drop-shadow-md flex justify-self-start ">
           Ticket_Wale
         </h1> */}
-        <div className="bg-[#FFFBEB] w-full flex justify-center items-center overflow-hidden px-4 py-8">
-          <div className=" p-6 shadow-md w-full max-w-sm rounded-2xl flex flex-col gap-5">
+        <div className="bg-[#FFFBEB] w-full flex justify-center items-center overflow-hidden px-4 py-8 lg:px-8">
+          <div className="p-6 shadow-md w-full max-w-sm rounded-2xl flex flex-col gap-5">
             <h1 className="text-2xl font-bold text-center text-gray-800">
               Welcome Back
             </h1>
@@ -182,12 +182,12 @@ export default function Page() {
           </div>
         </div>
 
-        <div>
+        <div className="hidden lg:flex justify-center items-center bg-[#FFFBEB] lg:w-1/2">
           <video
             // src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSQyXmEaYyZI8v8jfob8kgwwdmZ-CXgtHDoww&s"
             src="https://cdn.dribbble.com/uploads/48226/original/b8bd4e4273cceae2889d9d259b04f732.mp4?1689028949"
             style={{ objectFit: "cover", objectPosition: "center" }}
-            className="w-[700px] h-full rounded-xl"
+            className="w-full max-w-[700px] h-full rounded-xl"
             autoPlay
             muted
             loop
