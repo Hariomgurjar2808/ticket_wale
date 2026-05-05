@@ -24,3 +24,52 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+.login-background {
+  background: radial-gradient(circle at top left, rgba(56,189,248,0.18), transparent 27%),
+    radial-gradient(circle at bottom right, rgba(129,140,248,0.16), transparent 30%),
+    linear-gradient(135deg, #020617 0%, #081124 100%);
+}
+
+.travel-cta {
+  animation: travelGlow 4s ease-in-out infinite;
+}
+
+.travel-cta .bus-runner {
+  animation: none;
+  opacity: 0;
+}
+
+.travel-cta.bus-running .bus-runner {
+  animation: busRide 1.2s ease-in-out forwards;
+  opacity: 1;
+}
+
+@keyframes travelGlow {
+  0%, 100% {
+    box-shadow: 0 20px 40px rgba(233, 14, 160, 0.14);
+    transform: translateY(0);
+  }
+  50% {
+    box-shadow: 0 24px 52px rgba(165, 248, 56, 0.22);
+    transform: translateY(-2px);
+  }
+}
+
+@keyframes busRide {
+  0% {
+    transform: translateX(0) translateY(-50%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    transform: translateX(calc(100% - 2rem)) translateY(-50%);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(calc(100% - 2rem)) translateY(-50%);
+    opacity: 0;
+  }
+}

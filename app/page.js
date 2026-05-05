@@ -34,6 +34,7 @@ import { useAuth } from "../contexts/AuthContext";
 import Autocomplete from "@mui/material/Autocomplete";
 import TextField from "@mui/material/TextField";
 import InputAdornment from "@mui/material/InputAdornment";
+import HomeSkeleton from "../components/HomeSkeleton";
 
 // Transport options
 const transportButtons = [
@@ -59,21 +60,7 @@ export default function Page() {
 
   // Show loading state while checking authentication
   if (loading) {
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "100vh",
-          backgroundColor: "#FFFBEF",
-        }}
-      >
-        <Typography variant="h6" sx={{ color: '#5b5ea6' }}>
-          Loading...
-        </Typography>
-      </Box>
-    );
+    return <HomeSkeleton />;
   }
 
   const handleMenu = (event) => {
@@ -306,13 +293,20 @@ export default function Page() {
       </AppBar>
 
       {/* Main Content */}
-      <Box className="mt-20 px-4 sm:px-6 lg:px-8 py-6 flex flex-col items-center gap-4 sm:gap-6">
+      <Box className="px-4 sm:px-6 lg:px-8 py-25 flex flex-col items-center gap-4 sm:gap-6 "
+     style={{
+  backgroundImage: "linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/bgimage.jpg')",
+  backgroundSize: "cover",
+  backgroundPosition: "center",
+  backgroundRepeat: "no-repeat",
+}}
+      >
         {/* MONGODB INTEGRATION: Show welcome message for authenticated users */}
         {isAuthenticated() && (
           <Typography
             variant="h4"
-            className="text-2xl sm:text-3xl lg:text-4xl mb-4 sm:mb-6 text-center"
-            sx={{ color: '#5b5ea6' }}
+            className="text-2xl sm:text-3xl lg:text-4xl mb-4 sm:mb-6 text-center mt-20"
+            sx={{ color: '#e0e7ff' }}
           >
             Welcome back, {user?.name}!
           </Typography>
@@ -321,14 +315,14 @@ export default function Page() {
         <Typography
           variant="h2"
           className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl mb-3 sm:mb-4 text-center font-bold"
-          sx={{ color: '#333' }}
+          sx={{ color: '#93c5fd' }}
         >
           Ticket Wales
         </Typography>
         <Typography
           variant="h6"
           className="text-base sm:text-lg lg:text-xl mb-6 sm:mb-8 text-center max-w-2xl px-4"
-          sx={{ color: '#666' }}
+          sx={{ color: '#e5e7eb' }}
         >
           Your trusted travel partner for flights, hotels, buses, and more!
         </Typography>
@@ -581,7 +575,7 @@ export default function Page() {
 
 <div className="flex flex-col lg:flex-row items-center justify-around bg-gray-50 p-4 sm:p-6 md:p-8 lg:p-12 xl:p-16 rounded-xl sm:rounded-2xl shadow-sm mx-4 sm:mx-6 lg:mx-8 my-6 sm:my-8 lg:my-12">
         {/* Left Section */}
-        <div className="max-w-sm sm:max-w-md lg:max-w-lg text-center lg:text-left mb-6 lg:mb-0">
+        <div className="max-w-sm sm:max-w-md lg:max-w-lg text-center lg:text-left mb-6 lg:mb-0 ">
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-4xl xl:text-5xl font-extrabold text-gray-900 leading-tight mb-3 sm:mb-4">
             Safety for all
           </h1>
@@ -603,6 +597,7 @@ export default function Page() {
               className="rounded-xl sm:rounded-2xl w-48 sm:w-56 md:w-64 lg:w-72 xl:w-100 h-auto object-cover shadow-lg transition-transform duration-300 hover:scale-105"
             />
           </div>
+          
         </div>
       </div>
 
@@ -614,12 +609,14 @@ export default function Page() {
 <div className="flex flex-col md:flex-row items-center justify-center gap-12">
 {/* TicketWale User App */}
 <div className="flex flex-col items-center">
-<div className="bg-yellow-400 rounded-xl p-6 flex items-center justify-center w-24 h-24 shadow-lg">
-<img
-src="/mnt/data/b459b40e-83c6-4212-8270-14e79eaf51c7.png"
-alt="TicketWale User App"
-className="w-16 h-16 object-contain"
-/>
+<div className="flex flex-col items-center">
+  <div className="rounded-xl flex items-center justify-center w-24 h-24 shadow-lg">
+    <img
+      src="/Logo.png"
+      alt="TicketWale User App"
+      className="w-full h-full object-cover rounded-xl"
+    />
+  </div>
 </div>
 <p className="mt-6 text-xl md:text-2xl font-medium leading-tight">
 TicketWale: Book & Travel
@@ -629,11 +626,11 @@ TicketWale: Book & Travel
 
 {/* TicketWale Partner App */}
 <div className="flex flex-col items-center">
-<div className="bg-white rounded-xl p-6 flex items-center justify-center w-24 h-24 shadow-lg">
+<div className="rounded-xl flex items-center justify-center w-24 h-24 shadow-lg">
 <img
-src="/mnt/data/b459b40e-83c6-4212-8270-14e79eaf51c7.png"
+src="/Logo.png"
 alt="TicketWale Partner App"
-className="w-16 h-16 object-contain"
+className="w-full h-full object-cover rounded-xl"
 />
 </div>
 <p className="mt-6 text-xl md:text-2xl font-medium leading-tight">
@@ -666,3 +663,4 @@ TicketWale Partner: Drive & Earn
     </Box>
   );
 }
+

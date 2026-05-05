@@ -1,71 +1,81 @@
 "use client";
-// MONGODB INTEGRATION: Added useState and useRouter for form handling and navigation
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-// MONGODB INTEGRATION: Import useAuth hook for authentication state management
-import { useAuth } from "../../contexts/AuthContext";
 
-import { BorderColor } from "@mui/icons-material";
-import { Button } from "antd";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import React from "react";
 import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
+import { ArrowLeftOutlined } from "@ant-design/icons";
 
-export default function Page() {
+function ResetPasswordContent() {
   const [showPassword, setShowPassword] = useState(false);
-  
-  // MONGODB INTEGRATION: Added state management for form inputs and loading/error states
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [buttonAnimate, setButtonAnimate] = useState(false);
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [buttonAnimate, setButtonAnimate] = useState(false);
   const router = useRouter();
-  
-  // MONGODB INTEGRATION: Get login function from AuthContext
-  const { login } = useAuth();
+  const searchParams = useSearchParams();
 
-  // MONGODB INTEGRATION: Added function to handle input changes
-  const handleInputChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value,
-    });
-    // Clear error when user starts typing
-    if (error) setError("");
-  };
+  const contactMethod = searchParams.get("method") || "email";
+  const contact = searchParams.get("contact") || "";
 
-  // MONGODB INTEGRATION: Added function to handle form submission and API call
   const handleSubmit = async (e) => {
     e.preventDefault();
     setButtonAnimate(true);
     setLoading(true);
     setError("");
+    setSuccess("");
+
+    // Validate reset code
+    if (!resetCode.trim()) {
+      setError("Reset code is required");
+      setLoading(false);
+      return;
+    }
+
+    // Validate password
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(newPassword)) {
+      setError("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+      setLoading(false);
+      return;
+    }
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setError("Passwords do not match");
+      setLoading(false);
+      return;
+    }
 
     try {
-      const response = await fetch("/api/auth/login", {
+      const response = await fetch("/api/auth/reset-password", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          [contactMethod]: contact,
+          resetCode,
+          newPassword,
+        }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // MONGODB INTEGRATION: Use AuthContext login function instead of manual localStorage
-        login(data.user, data.token);
-        
-        // Redirect to home page after successful login
-        router.push("/");
+        setSuccess("Password reset successfully! Redirecting to login...");
+        setTimeout(() => {
+          router.push("/login");
+        }, 2000);
       } else {
-        setError(data.error || "Login failed");
+        setError(data.error || "Failed to reset password");
       }
     } catch (error) {
-      console.error("Login error:", error);
+      console.error("Reset password error:", error);
       setError("Network error. Please try again.");
     } finally {
       setLoading(false);
@@ -74,11 +84,9 @@ export default function Page() {
 
   useEffect(() => {
     if (!buttonAnimate) return;
-
     const timer = window.setTimeout(() => {
       setButtonAnimate(false);
     }, 1400);
-
     return () => window.clearTimeout(timer);
   }, [buttonAnimate]);
 
@@ -94,81 +102,53 @@ export default function Page() {
             <div className="space-y-3">
               <p className="text-sm uppercase tracking-[0.3em] text-cyan-200/80">Ticket Wales</p>
               <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl">
-                Book your next trip faster
+                Set New Password
               </h1>
               <p className="max-w-md text-sm leading-6 text-cyan-100/80">
-                Sign in to manage bookings, discover offers, and keep your travel plans ready from anywhere.
+                Enter the reset code you received and create a new password.
               </p>
             </div>
 
             <div className="rounded-[32px] border border-white/15 bg-slate-950/30 p-6 shadow-xl shadow-slate-950/20 backdrop-blur-2xl">
               <div className="mb-6 flex items-center justify-between gap-3 text-sm text-slate-300">
                 <div>
-                  <p className="font-medium text-white">Welcome Back</p>
-                  <p className="text-slate-400">Sign in to continue to your account</p>
+                  <p className="font-medium text-white">Verify & Reset</p>
+                  <p className="text-slate-400">Enter code and set your new password</p>
                 </div>
-                <span className="rounded-full bg-white/10 px-3 py-1 text-[0.7rem] uppercase tracking-[0.24em] text-cyan-100/90">
-                  Secure
-                </span>
-              </div>
-
-              <Link
-                href="https://accounts.google.com/o/oauth2/auth/oauthchooseaccount?access_type=offline&client_id=32073492121-s6ur8ti01mh34gq2bpbufb8ujdfrpn4v.apps.googleusercontent.com&redirect_uri=https%3A%2F%2Fdribbble.com%2Fauth%2Fgoogle_signup%2Fcallback&response_type=code&scope=email%20profile&state=d9cac1c0dd7cde9e808d45428ec9f4e5f4d00e2e4619cf6f&service=lso&o2v=1&flowName=GeneralOAuthFlow"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mb-4 block"
-              >
-                <Button
-                  style={{
-                    borderRadius: "999px",
-                    height: 44,
-                    fontSize: "14px",
-                  }}
-                  className="flex w-full items-center justify-center gap-2 border border-white/15 bg-white/10 px-4 text-sm text-white transition duration-200 hover:bg-white/20"
-                  variant="outlined"
-                >
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg"
-                    alt="Google Logo"
-                    className="h-5 w-auto"
-                  />
-                  <span className="hidden sm:inline">Continue with Google</span>
-                </Button>
-              </Link>
-
-              <div className="mb-6 flex items-center justify-center gap-3 text-xs text-slate-400 before:h-px before:flex-1 before:bg-white/10 after:h-px after:flex-1 after:bg-white/10">
-                <span>or continue with email</span>
               </div>
 
               {error && (
-                <div className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200">
+                <div className="rounded-2xl bg-rose-500/10 px-4 py-3 text-sm text-rose-200 mb-4">
                   {error}
+                </div>
+              )}
+              {success && (
+                <div className="rounded-2xl bg-green-500/10 px-4 py-3 text-sm text-green-200 mb-4">
+                  {success}
                 </div>
               )}
 
               <form className="space-y-4" onSubmit={handleSubmit}>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-200">Email</label>
+                  <label className="text-sm font-medium text-slate-200">Reset Code</label>
                   <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="Enter your email"
+                    type="text"
+                    value={resetCode}
+                    onChange={(e) => setResetCode(e.target.value)}
+                    placeholder="Enter the 6-digit code sent to your email/phone"
                     className="w-full rounded-3xl border border-white/15 bg-white/10 px-4 py-3 text-sm text-white outline-none transition focus:border-cyan-300 focus:bg-white/15 focus:ring-2 focus:ring-cyan-300/20"
                     required
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-200">Password</label>
+                  <label className="text-sm font-medium text-slate-200">New Password</label>
                   <div className="relative">
                     <input
                       type={showPassword ? "text" : "password"}
-                      name="password"
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      placeholder="Enter your password"
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="Enter your new password"
                       className="w-full rounded-3xl border border-white/15 bg-white/10 px-4 py-3 pr-12 text-sm text-white outline-none transition focus:border-cyan-300 focus:bg-white/15 focus:ring-2 focus:ring-cyan-300/20"
                       required
                     />
@@ -178,6 +158,28 @@ export default function Page() {
                       className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 transition hover:text-white"
                     >
                       {showPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400">At least 8 characters with uppercase, lowercase, number, and special character</p>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-200">Confirm Password</label>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm your password"
+                      className="w-full rounded-3xl border border-white/15 bg-white/10 px-4 py-3 pr-12 text-sm text-white outline-none transition focus:border-cyan-300 focus:bg-white/15 focus:ring-2 focus:ring-cyan-300/20"
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 transition hover:text-white"
+                    >
+                      {showConfirmPassword ? <EyeInvisibleOutlined /> : <EyeOutlined />}
                     </button>
                   </div>
                 </div>
@@ -193,33 +195,22 @@ export default function Page() {
                     className="bus-runner absolute left-3 top-1/2 h-6 w-auto -translate-y-1/2 opacity-0"
                   />
                   <span className="relative z-10">
-                    {loading ? "Logging in..." : "Login & Explore"}
+                    {loading ? "Resetting Password..." : "Reset Password"}
                   </span>
                 </button>
               </form>
 
-              <p className="mt-4 text-center text-sm">
-                <Link href="/forgot-password" className="text-cyan-200 font-medium hover:text-cyan-100 transition">
-                  Forgot Password?
+              <div className="mt-4">
+                <Link href="/forgot-password" className="flex items-center gap-2 text-sm text-cyan-200 hover:text-cyan-100 transition">
+                  <ArrowLeftOutlined className="text-xs" />
+                  Back to Forgot Password
                 </Link>
-              </p>
+              </div>
 
-              <p className="mt-4 text-center text-xs leading-5 text-slate-400">
-                By continuing, you agree to our{" "}
-                <Link href="/privacy" className="text-cyan-200 font-medium">
-                  terms
-                </Link>{" "}
-                and{" "}
-                <Link href="/privacy" className="text-cyan-200 font-medium">
-                  privacy policy
-                </Link>
-                .
-              </p>
-
-              <p className="text-center text-sm text-slate-300">
-                Don't have an account?{" "}
-                <Link href="/signup" className="font-semibold text-white">
-                  Sign Up
+              <p className="mt-3 text-center text-xs leading-5 text-slate-400">
+                Remember your password?{" "}
+                <Link href="/login" className="text-cyan-200 font-medium hover:text-cyan-100">
+                  Sign In
                 </Link>
               </p>
             </div>
@@ -246,3 +237,10 @@ export default function Page() {
   );
 }
 
+export default function ResetPasswordPage() {
+  return (
+    <Suspense fallback={<div className="h-screen bg-slate-950 flex items-center justify-center text-white">Loading...</div>}>
+      <ResetPasswordContent />
+    </Suspense>
+  );
+}

@@ -1,101 +1,3 @@
-// // import connectDB from '../../../lib/mongodb';
-// import bcrypt from 'bcryptjs';
-// import jwt from 'jsonwebtoken';
-
-// export async function POST(request) {
-//   try {
-//     const { db } = await connectDB();
-    
-//     const { name, email, password, phone } = await request.json();
-
-//     // Validate input
-//     if (!name || !email || !password) {
-//       return Response.json(
-//         { error: 'Name, email, and password are required' },
-//         { status: 400 }
-//       );
-//     }
-
-//     // Validate email format
-//     const emailRegex = /^\w+([\.-]?\w+)*@\w+([\.-]?\w+)*(\.\w{2,3})+$/;
-//     if (!emailRegex.test(email)) {
-//       return Response.json(
-//         { error: 'Please provide a valid email' },
-//         { status: 400 }
-//       );
-//     }
-
-//     // Validate password length
-//     if (password.length < 6) {
-//       return Response.json(
-//         { error: 'Password must be at least 6 characters' },
-//         { status: 400 }
-//       );
-//     }
-
-//     // Check if user already exists using native MongoDB client
-//     const existingUser = await db.collection('users').findOne({ email });
-//     if (existingUser) {
-//       return Response.json(
-//         { error: 'User with this email already exists' },
-//         { status: 409 }
-//       );
-//     }
-
-//     // Hash password
-//     const saltRounds = 12;
-//     const hashedPassword = await bcrypt.hash(password, saltRounds);
-
-//     // Create new user document
-//     const newUser = {
-//       name,
-//       email,
-//       password: hashedPassword,
-//       phone: phone || '',
-//       role: 'user',
-//       isVerified: false,
-//       profileImage: '',
-//       createdAt: new Date(),
-//       updatedAt: new Date(),
-//     };
-
-//     // Insert user into database using native MongoDB client
-//     const result = await db.collection('users').insertOne(newUser);
-    
-//     // Get the created user (without password)
-//     const savedUser = await db.collection('users').findOne(
-//       { _id: result.insertedId },
-//       { projection: { password: 0 } }
-//     );
-
-//     // Generate JWT token
-//     const token = jwt.sign(
-//       { 
-//         userId: savedUser._id, 
-//         email: savedUser.email,
-//         role: savedUser.role 
-//       },
-//       process.env.JWT_SECRET,
-//       { expiresIn: '7d' }
-//     );
-
-//     return Response.json({
-//       message: 'User registered successfully',
-//       user: savedUser,
-//       token,
-//     }, { status: 201 });
-
-//   } catch (error) {
-//     console.error('Registration error:', error);
-    
-//     return Response.json(
-//       { error: 'Internal server error' },
-//       { status: 500 }
-//     );
-//   }
-// }
-
-
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
@@ -118,9 +20,9 @@ export async function POST(request) {
 
     const { name, email, password, phone } = await request.json();
 
-    if (!name || !email || !password) {
+    if (!name || !email || !password || !phone) {
       return NextResponse.json(
-        { error: "Name, email, and password are required" },
+        { error: "Name, email, password, and phone are required" },
         { status: 400 }
       );
     }
@@ -135,9 +37,18 @@ export async function POST(request) {
       );
     }
 
-    if (password.length < 6) {
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+    if (!passwordRegex.test(password)) {
       return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
+        { error: "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character" },
+        { status: 400 }
+      );
+    }
+
+    const phoneRegex = /^\d{10}$/;
+    if (!phoneRegex.test(phone)) {
+      return NextResponse.json(
+        { error: "Phone number must be exactly 10 digits" },
         { status: 400 }
       );
     }
@@ -159,7 +70,7 @@ export async function POST(request) {
       name: name.trim(),
       email: normalizedEmail,
       password: hashedPassword,
-      phone: phone?.trim() || "",
+      phone: phone.trim(),
       role: "user",
       isVerified: false,
       profileImage: "",
