@@ -102,7 +102,7 @@ export default function Page() {
       date: travelDate,
     }).toString();
 
-    router.push(`/booking?${bookingQuery}`);
+    router.push(`/booking/bus?${bookingQuery}`);
   };
 
   // MONGODB INTEGRATION: Dynamic auth buttons based on authentication state
@@ -159,6 +159,14 @@ export default function Page() {
       >
         <Toolbar className="flex justify-between items-center w-full px-2 sm:px-4 lg:px-8 min-h-[70px]">
           <div className="flex items-center gap-2 sm:gap-3">
+            <Link href="/" className="flex items-center">
+              <img
+                src="/Logo.png"
+                alt="Ticket Wales logo"
+                className="h-10 w-auto object-contain"
+                style={{ maxHeight: "50px" }}
+              />
+            </Link>
             {/* Responsive navigation menu */}
             <div className="block lg:hidden">
               <IconButton

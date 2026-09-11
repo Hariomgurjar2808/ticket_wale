@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Box, Button, Typography } from "@mui/material";
 import { useAuth } from "@/contexts/AuthContext";
 
+const RAZORPAY_KEY_ID = process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID || "";
+
 function PaymentPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -52,6 +54,49 @@ function PaymentPageContent() {
   const selectedPaymentLabel =
     paymentMethods.find((method) => method.id === selectedPaymentMethod)?.label || "";
 
+  const loadRazorpayScript = () =>
+    new Promise((resolve) => {
+      if (typeof window === "undefined") {
+        return resolve(false);
+      }
+
+      if (window.Razorpay) {
+        return resolve(true);
+      }
+
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => resolve(true);
+      script.onerror = () => resolve(false);
+      document.body.appendChild(script);
+    });
+
+  const handleBookingSubmission = async (paymentDetails) => {
+    const response = await authenticatedFetch("/api/bookings", {
+      method: "POST",
+      body: JSON.stringify({
+        serviceType: "bus",
+        from,
+        to,
+        departureDate: date,
+        price: Number(fare),
+        passengers: seatCount,
+        passengerDetails: passengers,
+        busName,
+        startTime,
+        reachTime,
+        seatNumbers: seats.split(",").map((seat) => seat.trim()).filter(Boolean),
+        paymentMethod: selectedPaymentLabel,
+        paymentDetails,
+        contact: {
+          email: user?.email || "",
+        },
+      }),
+    });
+
+    return response;
+  };
+
   const handlePayNow = async () => {
     if (!isAuthenticated()) {
       setSubmitMessage("Please login before completing payment.");
@@ -63,45 +108,112 @@ function PaymentPageContent() {
       return;
     }
 
+    if (!fare || Number(fare) <= 0) {
+      setSubmitMessage("Invalid fare amount.");
+      return;
+    }
+
     try {
       setIsPaying(true);
       setSubmitMessage("");
 
-      const response = await authenticatedFetch("/api/bookings", {
-        method: "POST",
-        body: JSON.stringify({
-          serviceType: "bus",
-          from,
-          to,
-          departureDate: date,
-          price: Number(fare),
-          passengers: seatCount,
-          passengerDetails: passengers,
-          busName,
-          startTime,
-          reachTime,
-          seatNumbers: seats.split(",").map((seat) => seat.trim()).filter(Boolean),
-          paymentMethod: selectedPaymentLabel,
-          contact: {
-            email: user?.email || "",
-          },
-        }),
-      });
+      if (!RAZORPAY_KEY_ID) {
+        const response = await handleBookingSubmission({
+          mode: selectedPaymentLabel,
+        });
 
-      const data = await response.json();
+        const data = await response.json();
 
-      if (!response.ok) {
-        setSubmitMessage(data.error || "Payment failed. Please try again.");
+        if (!response.ok) {
+          setSubmitMessage(data.error || "Payment failed. Please try again.");
+          return;
+        }
+
+        setSubmitMessage("Payment successful");
+        setTimeout(() => {
+          router.push("/");
+        }, 1200);
         return;
       }
 
-      setSubmitMessage("Payment successful");
-      setTimeout(() => {
-        router.push("/");
-      }, 1200);
+      const orderResponse = await authenticatedFetch("/api/payment/order", {
+        method: "POST",
+        body: JSON.stringify({
+          amount: Number(fare) * 100,
+          currency: "INR",
+          receipt: `ticket-wales-${Date.now()}`,
+        }),
+      });
+
+      const orderData = await orderResponse.json();
+
+      if (!orderResponse.ok) {
+        setSubmitMessage(orderData.error || "Unable to create payment order.");
+        return;
+      }
+
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        setSubmitMessage("Payment gateway failed to load. Please try again later.");
+        return;
+      }
+
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.order.amount,
+        currency: orderData.order.currency,
+        name: "Ticket Wales",
+        description: `Booking from ${from} to ${to}`,
+        order_id: orderData.order.id,
+        prefill: {
+          email: user?.email || "",
+          name: user?.name || "",
+        },
+        notes: {
+          seats,
+          paymentMethod: selectedPaymentLabel,
+        },
+        theme: {
+          color: "#5b5ea6",
+        },
+        handler: async function (paymentResponse) {
+          try {
+            const submitResponse = await handleBookingSubmission({
+              mode: selectedPaymentLabel,
+              razorpayPaymentId: paymentResponse.razorpay_payment_id,
+              razorpayOrderId: paymentResponse.razorpay_order_id,
+              razorpaySignature: paymentResponse.razorpay_signature,
+            });
+
+            const submitData = await submitResponse.json();
+
+            if (!submitResponse.ok) {
+              setSubmitMessage(submitData.error || "Booking failed after payment.");
+              return;
+            }
+
+            setSubmitMessage("Payment successful");
+            setTimeout(() => {
+              router.push("/");
+            }, 1200);
+          } catch (error) {
+            setSubmitMessage("Booking failed after payment. Please contact support.");
+          } finally {
+            setIsPaying(false);
+          }
+        },
+        modal: {
+          ondismiss: function () {
+            setSubmitMessage("Payment was cancelled. Please try again.");
+            setIsPaying(false);
+          },
+        },
+      };
+
+      const paymentObject = new window.Razorpay(options);
+      paymentObject.open();
     } catch (error) {
       setSubmitMessage("Payment failed. Please try again.");
-    } finally {
       setIsPaying(false);
     }
   };

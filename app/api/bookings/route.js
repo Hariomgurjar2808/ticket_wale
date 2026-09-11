@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import jwt from 'jsonwebtoken';
 import { ObjectId } from 'mongodb';
 import nodemailer from 'nodemailer';
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
 import clientPromise from '@/lib/mongodb';
 
 // Ensure Node runtime
@@ -161,6 +162,21 @@ Thank you for booking with Ticket Wales.
     `,
   };
 
+  // generate PDF ticket and attach
+  try {
+    const pdfBuffer = await generateTicketPDF({ booking, user });
+    mailOptions.attachments = [
+      {
+        filename: `${booking.bookingReference}.pdf`,
+        content: pdfBuffer,
+        contentType: 'application/pdf',
+      },
+    ];
+  } catch (pdfErr) {
+    console.error('Failed to generate ticket PDF:', pdfErr);
+    // continue without attachment
+  }
+
   try {
     await transporter.sendMail(mailOptions);
     return { sent: true };
@@ -172,6 +188,111 @@ Thank you for booking with Ticket Wales.
       message: error.message || 'Email transport failed',
     };
   }
+}
+
+async function generateTicketPDF({ booking, user }) {
+  const pdfDoc = await PDFDocument.create();
+  const page = pdfDoc.addPage([595, 842]);
+  const helvetica = await pdfDoc.embedFont(StandardFonts.Helvetica);
+  const helveticaBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+  const { width, height } = page.getSize();
+  const margin = 50;
+  let y = height - margin;
+  const lineHeight = 18;
+
+  page.drawText('Ticket Wales', {
+    x: margin,
+    y,
+    size: 24,
+    font: helveticaBold,
+    color: rgb(0.07, 0.09, 0.18),
+  });
+
+  y -= 32;
+  page.drawText(`Booking Reference: ${booking.bookingReference}`, {
+    x: margin,
+    y,
+    size: 12,
+    font: helvetica,
+    color: rgb(0.22, 0.28, 0.33),
+  });
+
+  y -= 28;
+  page.drawText('Trip Details', {
+    x: margin,
+    y,
+    size: 14,
+    font: helveticaBold,
+    color: rgb(0.07, 0.09, 0.18),
+  });
+
+  y -= 22;
+  const tripLines = [
+    `Route: ${booking.from} to ${booking.to}`,
+    `Travel Date: ${new Date(booking.departureDate).toDateString()}`,
+    `Bus: ${booking.busName || 'Bus service'}`,
+    `Timings: ${booking.startTime || '-'} to ${booking.reachTime || '-'}`,
+    `Seats: ${Array.isArray(booking.seatNumbers) ? booking.seatNumbers.join(', ') : '-'}`,
+    `Passengers: ${booking.passengers || 1}`,
+    `Total Fare: Rs ${booking.price}`,
+  ];
+  tripLines.forEach((line) => {
+    page.drawText(line, {
+      x: margin,
+      y,
+      size: 11,
+      font: helvetica,
+      color: rgb(0.24, 0.27, 0.31),
+    });
+    y -= lineHeight;
+  });
+
+  y -= 14;
+  page.drawText('Passenger Details', {
+    x: margin,
+    y,
+    size: 14,
+    font: helveticaBold,
+    color: rgb(0.07, 0.09, 0.18),
+  });
+
+  y -= 22;
+  if (Array.isArray(booking.passengerDetails) && booking.passengerDetails.length) {
+    booking.passengerDetails.forEach((passenger, idx) => {
+      const passengerText = `${idx + 1}. ${passenger.name} | Age: ${passenger.age} | Seat: ${passenger.seatLabel}`;
+      page.drawText(passengerText, {
+        x: margin,
+        y,
+        size: 11,
+        font: helvetica,
+        color: rgb(0.24, 0.27, 0.31),
+      });
+      y -= lineHeight;
+    });
+  } else {
+    page.drawText('Passenger details not available', {
+      x: margin,
+      y,
+      size: 11,
+      font: helvetica,
+      color: rgb(0.24, 0.27, 0.31),
+    });
+    y -= lineHeight;
+  }
+
+  y -= 14;
+  const footerText = 'Welcome aboard! We wish you a pleasant journey. Please carry a valid ID when boarding.';
+  page.drawText(footerText, {
+    x: margin,
+    y,
+    size: 11,
+    font: helvetica,
+    color: rgb(0.44, 0.48, 0.52),
+    maxWidth: width - margin * 2,
+  });
+
+  const pdfBytes = await pdfDoc.save();
+  return Buffer.from(pdfBytes);
 }
 
 // GET - Fetch all bookings for authenticated user
