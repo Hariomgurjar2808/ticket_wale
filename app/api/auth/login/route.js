@@ -75,6 +75,7 @@ export async function POST(request) {
       _id: user._id.toString(),
       name: user.name,
       email: user.email,
+      phone: user.phone || "",
       role: user.role || "user",
       isVerified: user.isVerified ?? true,
     };

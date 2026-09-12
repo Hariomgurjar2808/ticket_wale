@@ -22,7 +22,6 @@ export default function Page() {
     phone: "",
   });
   const [loading, setLoading] = useState(false);
-  const [buttonAnimate, setButtonAnimate] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const router = useRouter();
@@ -44,7 +43,7 @@ export default function Page() {
   // MONGODB INTEGRATION: Added function to handle form submission and API call
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setButtonAnimate(true);
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -95,16 +94,6 @@ export default function Page() {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (!buttonAnimate) return;
-
-    const timer = window.setTimeout(() => {
-      setButtonAnimate(false);
-    }, 1400);
-
-    return () => window.clearTimeout(timer);
-  }, [buttonAnimate]);
 
   return (
     <div className="h-screen login-background text-white overflow-hidden">
@@ -239,13 +228,8 @@ export default function Page() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className={`travel-cta relative overflow-hidden w-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60 ${buttonAnimate ? "bus-running" : ""}`}
+                  className="travel-cta relative overflow-hidden w-full rounded-full bg-gradient-to-r from-cyan-400 via-sky-500 to-indigo-500 px-5 py-3 text-sm font-semibold text-slate-950 shadow-lg shadow-cyan-500/20 transition duration-200 hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                 >
-                  <img
-                    src="https://img.icons8.com/ios-filled/50/ffffff/bus.png"
-                    alt="bus"
-                    className="bus-runner absolute left-3 top-1/2 h-6 w-auto -translate-y-1/2 opacity-0"
-                  />
                   <span className="relative z-10">
                     {loading ? "Creating Account..." : "Sign Up & Explore"}
                   </span>

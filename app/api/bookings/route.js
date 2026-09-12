@@ -353,6 +353,11 @@ export async function POST(request) {
     const decoded = verifyToken(request);
     const userId = new ObjectId(decoded.userId);
 
+    const authUser = await db.collection('users').findOne(
+      { _id: userId },
+      { projection: { email: 1, phone: 1, name: 1 } }
+    );
+
     const bookingData = await request.json();
     
     // Validate required fields
@@ -437,8 +442,8 @@ export async function POST(request) {
       paymentMethod,
       specialRequests: bookingData.specialRequests || '',
       contact: {
-        email: bookingData.contact?.email || decoded.email || '',
-        phone: bookingData.contact?.phone || '',
+        email: authUser?.email || decoded.email || '',
+        phone: authUser?.phone || '',
       },
       createdAt: new Date(),
       updatedAt: new Date(),

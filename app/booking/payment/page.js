@@ -88,9 +88,6 @@ function PaymentPageContent() {
         seatNumbers: seats.split(",").map((seat) => seat.trim()).filter(Boolean),
         paymentMethod: selectedPaymentLabel,
         paymentDetails,
-        contact: {
-          email: user?.email || "",
-        },
       }),
     });
 

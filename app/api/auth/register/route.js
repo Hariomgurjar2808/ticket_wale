@@ -64,13 +64,25 @@ export async function POST(request) {
       );
     }
 
+    const normalizedPhone = phone.trim();
+    const existingPhoneUser = await db.collection("users").findOne({
+      phone: normalizedPhone,
+    });
+
+    if (existingPhoneUser) {
+      return NextResponse.json(
+        { error: "This phone number is already registered" },
+        { status: 409 }
+      );
+    }
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
     const newUser = {
       name: name.trim(),
       email: normalizedEmail,
       password: hashedPassword,
-      phone: phone.trim(),
+      phone: normalizedPhone,
       role: "user",
       isVerified: false,
       profileImage: "",
