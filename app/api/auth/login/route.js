@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import clientPromise from "@/lib/mongodb";
+import clientPromise, { isMongoConnectionError } from "@/lib/mongodb";
 
 // Ensure Node runtime (bcrypt doesn't work on Edge)
 export const runtime = "nodejs";
@@ -88,10 +88,19 @@ export async function POST(request) {
   } catch (error) {
     console.error("🔥 Login error:", error);
 
+    if (isMongoConnectionError(error)) {
+      return NextResponse.json(
+        {
+          error: "Database unavailable. Please start MongoDB on localhost:27017 and retry.",
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json(
       {
         error: "Internal server error",
-        details: error.message, // 👈 helps debugging in Vercel logs
+        details: error.message,
       },
       { status: 500 }
     );
