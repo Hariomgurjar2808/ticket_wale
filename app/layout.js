@@ -1,5 +1,6 @@
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata = {
   title: "Ticket Wales - Your Travel Partner",
@@ -13,6 +14,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           {children}
         </AuthProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
