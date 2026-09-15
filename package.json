@@ -6,6 +6,7 @@
     "node": ">=20.9.0"
   },
   "scripts": {
+    "predev": "node scripts/ensure-mongodb.js",
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",

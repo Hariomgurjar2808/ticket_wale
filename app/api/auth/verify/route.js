@@ -21,6 +21,13 @@ export async function GET(request) {
     
     // Verify JWT token
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    if (!ObjectId.isValid(decoded.userId)) {
+      return NextResponse.json(
+        { error: 'Invalid or expired token' },
+        { status: 401 }
+      );
+    }
     
     // Connect to database and verify user still exists
     const client = await clientPromise;

@@ -18,6 +18,7 @@ function PassengerDetailsContent() {
   const seats = searchParams.get("seats") || "-";
   const seatCount = Number(searchParams.get("seatCount") || "0");
   const fare = searchParams.get("fare") || "0";
+  const MAX_PASSENGER_AGE = 120;
 
   const initialPassengers = useMemo(
     () =>
@@ -53,7 +54,9 @@ function PassengerDetailsContent() {
       (passenger) =>
         passenger.name.trim().length > 0 &&
         passenger.age !== "" &&
-        Number(passenger.age) > 0
+        Number.isInteger(Number(passenger.age)) &&
+        Number(passenger.age) >= 1 &&
+        Number(passenger.age) <= MAX_PASSENGER_AGE
     );
 
   const handleContinueToPayment = () => {
@@ -202,11 +205,15 @@ function PassengerDetailsContent() {
                       placeholder="Enter age"
                       value={passenger.age}
                       onChange={(event) =>
-                        handlePassengerChange(index, "age", event.target.value)
+                        handlePassengerChange(
+                          index,
+                          "age",
+                          event.target.value.replace(/[^0-9]/g, "").slice(0, 3)
+                        )
                       }
                       fullWidth
                       required
-                      inputProps={{ min: 1 }}
+                      inputProps={{ min: 1, max: MAX_PASSENGER_AGE, step: 1 }}
                       sx={{
                         "& .MuiOutlinedInput-root": {
                           borderRadius: "16px",

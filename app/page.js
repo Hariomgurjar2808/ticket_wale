@@ -53,7 +53,14 @@ export default function Page() {
   const [fromCity, setFromCity] = useState(null);
   const [toCity, setToCity] = useState(null);
   const [travelDate, setTravelDate] = useState("");
+  const [bookingMessage, setBookingMessage] = useState("");
   const router = useRouter();
+  const today = new Date();
+  const minimumTravelDate = [
+    today.getFullYear(),
+    String(today.getMonth() + 1).padStart(2, "0"),
+    String(today.getDate()).padStart(2, "0"),
+  ].join("-");
 
   // MONGODB INTEGRATION: Get authentication state and functions
   const { user, logout, isAuthenticated, loading } = useAuth();
@@ -87,14 +94,41 @@ export default function Page() {
   };
 
   const isBookingFormComplete = Boolean(
-    fromCity?.label && toCity?.label && travelDate
+    fromCity?.label &&
+      toCity?.label &&
+      fromCity.label !== toCity.label &&
+      travelDate &&
+      travelDate >= minimumTravelDate
+  );
+  const hasSameCity = Boolean(
+    fromCity?.label &&
+      toCity?.label &&
+      fromCity.label.toLowerCase() === toCity.label.toLowerCase()
   );
 
   // MONGODB INTEGRATION: Handle Book Ride button click
   const handleBookRide = () => {
-    if (!isBookingFormComplete) {
+    if (hasSameCity) {
+      setBookingMessage("Pickup and destination must be different cities.");
       return;
     }
+
+    if (!travelDate) {
+      setBookingMessage("Please enter the travel date.");
+      return;
+    }
+
+    if (travelDate < minimumTravelDate) {
+      setBookingMessage("Please select today or a future travel date.");
+      return;
+    }
+
+    if (!fromCity?.label || !toCity?.label) {
+      setBookingMessage("Please select both pickup and destination cities.");
+      return;
+    }
+
+    setBookingMessage("");
 
     const bookingQuery = new URLSearchParams({
       from: fromCity.label,
@@ -362,7 +396,10 @@ export default function Page() {
             <Autocomplete
               options={cities}
               value={fromCity}
-              onChange={(_, newValue) => setFromCity(newValue)}
+              onChange={(_, newValue) => {
+                setFromCity(newValue);
+                setBookingMessage("");
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -391,7 +428,10 @@ export default function Page() {
             <Autocomplete
               options={cities}
               value={toCity}
-              onChange={(_, newValue) => setToCity(newValue)}
+              onChange={(_, newValue) => {
+                setToCity(newValue);
+                setBookingMessage("");
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}
@@ -421,7 +461,16 @@ export default function Page() {
               label="Travel Date"
               type="date"
               value={travelDate}
-              onChange={(event) => setTravelDate(event.target.value)}
+              onChange={(event) => {
+                setTravelDate(event.target.value);
+                setBookingMessage("");
+              }}
+              onClick={(event) => {
+                const input = event.currentTarget.querySelector("input");
+                if (input?.showPicker) {
+                  input.showPicker();
+                }
+              }}
               fullWidth
               required
               InputLabelProps={{
@@ -435,7 +484,7 @@ export default function Page() {
                 ),
               }}
               inputProps={{
-                min: new Date().toISOString().split("T")[0],
+                min: minimumTravelDate,
               }}
               sx={{
                 "& .MuiOutlinedInput-root": {
@@ -448,7 +497,7 @@ export default function Page() {
             <Button
               variant="contained"
               onClick={handleBookRide}
-              disabled={!isBookingFormComplete}
+              disabled={hasSameCity}
               className="w-full px-6 py-3 sm:py-4 text-lg sm:text-xl font-medium"
               sx={{
                 background: "linear-gradient(135deg, #5b5ea6 0%, #292c6d 100%)",
@@ -462,7 +511,8 @@ export default function Page() {
                   background: "linear-gradient(135deg, #4a4d8f 0%, #20235a 100%)",
                 },
                 "&.Mui-disabled": {
-                  backgroundColor: "#b9bacc",
+                  background: "#b9bacc",
+                  backgroundImage: "none",
                   color: "white",
                 },
               }}
@@ -470,12 +520,31 @@ export default function Page() {
               Book Ride
             </Button>
 
-            {!isBookingFormComplete && (
+            {bookingMessage && (
+              <Typography
+                role="alert"
+                variant="body2"
+                sx={{
+                  color: "#b42318",
+                  backgroundColor: "#fff1f0",
+                  border: "1px solid #fecdca",
+                  borderRadius: "12px",
+                  px: 2,
+                  py: 1.25,
+                  textAlign: "center",
+                  fontWeight: 600,
+                }}
+              >
+                {bookingMessage}
+              </Typography>
+            )}
+
+            {!isBookingFormComplete && !bookingMessage && (
               <Typography
                 variant="body2"
                 sx={{ color: "#63647f", textAlign: "center", fontWeight: 500 }}
               >
-                Select your pickup city, destination, and travel date to continue.
+                Select different pickup and destination cities, and a valid date from today onward.
               </Typography>
             )}
           </Box>

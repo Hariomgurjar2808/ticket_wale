@@ -75,7 +75,7 @@ async function sendBookingConfirmationEmail({ booking, user }) {
   }
 
   const fromEmail = process.env.FROM_EMAIL || process.env.SMTP_USER;
-  const recipientEmail = booking.contact?.email || user?.email;
+  const recipientEmail = booking.contact?.email || user?.email || booking?.user?.email;
 
   if (!recipientEmail) {
     return {
@@ -302,6 +302,9 @@ export async function GET(request) {
     const db = client.db();
     
     const decoded = verifyToken(request);
+    if (!ObjectId.isValid(decoded.userId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const userId = new ObjectId(decoded.userId);
 
     // Use aggregation to join user data using native MongoDB client
@@ -351,12 +354,22 @@ export async function POST(request) {
     const db = client.db();
     
     const decoded = verifyToken(request);
+    if (!ObjectId.isValid(decoded.userId)) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     const userId = new ObjectId(decoded.userId);
 
     const authUser = await db.collection('users').findOne(
       { _id: userId },
       { projection: { email: 1, phone: 1, name: 1 } }
     );
+
+    if (!authUser?.email) {
+      return NextResponse.json(
+        { error: 'Logged-in user email is missing from the registered account' },
+        { status: 400 }
+      );
+    }
 
     const bookingData = await request.json();
     
@@ -365,6 +378,39 @@ export async function POST(request) {
     if (!serviceType || !from || !to || !departureDate || !price) {
       return NextResponse.json(
         { error: 'Missing required fields: serviceType, from, to, departureDate, price' },
+        { status: 400 }
+      );
+    }
+
+    if (String(from).trim().toLowerCase() === String(to).trim().toLowerCase()) {
+      return NextResponse.json(
+        { error: 'Pickup and destination locations must be different' },
+        { status: 400 }
+      );
+    }
+
+    const dateParts = String(departureDate).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const parsedDepartureDate = dateParts
+      ? new Date(
+          Number(dateParts[1]),
+          Number(dateParts[2]) - 1,
+          Number(dateParts[3])
+        )
+      : new Date('invalid');
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const isValidCalendarDate =
+      dateParts &&
+      parsedDepartureDate.getFullYear() === Number(dateParts[1]) &&
+      parsedDepartureDate.getMonth() === Number(dateParts[2]) - 1 &&
+      parsedDepartureDate.getDate() === Number(dateParts[3]);
+    if (Number.isNaN(parsedDepartureDate.getTime()) || !isValidCalendarDate) {
+      return NextResponse.json({ error: 'Invalid departure date' }, { status: 400 });
+    }
+    parsedDepartureDate.setHours(0, 0, 0, 0);
+    if (parsedDepartureDate < today) {
+      return NextResponse.json(
+        { error: 'Departure date cannot be in the past' },
         { status: 400 }
       );
     }
@@ -406,6 +452,22 @@ export async function POST(request) {
       );
     }
 
+    const hasInvalidPassenger = passengerDetails.some((passenger) => {
+      const age = Number(passenger?.age);
+      return (
+        !passenger?.name?.trim() ||
+        !Number.isInteger(age) ||
+        age < 1 ||
+        age > 120
+      );
+    });
+    if (hasInvalidPassenger) {
+      return NextResponse.json(
+        { error: 'Each passenger must have a name and an age from 1 to 120' },
+        { status: 400 }
+      );
+    }
+
     const paymentMethod = bookingData.paymentMethod || '';
     if (!paymentMethod) {
       return NextResponse.json(
@@ -427,7 +489,7 @@ export async function POST(request) {
       serviceType,
       from,
       to,
-      departureDate: new Date(departureDate),
+      departureDate: parsedDepartureDate,
       returnDate: bookingData.returnDate ? new Date(bookingData.returnDate) : null,
       passengers: passengerCount,
       passengerDetails,

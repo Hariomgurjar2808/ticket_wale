@@ -126,7 +126,11 @@ function PaymentPageContent() {
           return;
         }
 
-        setSubmitMessage("Payment successful");
+        setSubmitMessage(
+          data.emailStatus?.sent === false
+            ? data.message || "Payment successful but confirmation email could not be sent."
+            : "Payment successful"
+        );
         setTimeout(() => {
           router.push("/");
         }, 1200);
@@ -189,7 +193,11 @@ function PaymentPageContent() {
               return;
             }
 
-            setSubmitMessage("Payment successful");
+            setSubmitMessage(
+              submitData.emailStatus?.sent === false
+                ? submitData.message || "Payment successful but confirmation email could not be sent."
+                : "Payment successful"
+            );
             setTimeout(() => {
               router.push("/");
             }, 1200);
